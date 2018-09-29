@@ -1,0 +1,12 @@
+{
+  "name": "vcf_to_csv",
+  "version": "1.0.0",
+  "description": "vcf cards to csv converter for Andre Daus",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": ".node src/index.js"
+  },
+  "author": "akramovmv@gmail.com",
+  "license": "ISC"
+}
