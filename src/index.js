@@ -101,14 +101,6 @@ function parseMeta(meta = {}) {
 
 function saveToCSV(arrayofObjects) {
   try {
-    // const headers = Object.keys(file)
-    //   .map(item => `"${item}"`)
-    //   .toString();
-    // const values = Object.values(file)
-    //   .map(item => `"${item}"`)
-    //   .toString();
-    // const csvFile = headers + "\r\n" + values;
-    // return csvFile;
     const fields = Object.keys(arrayofObjects[0]);
     const parser = new Json2csvParser({ fields });
     const csvFile = parser.parse(arrayofObjects);
@@ -124,7 +116,6 @@ function writeToFile({ outputFileLocation, file }) {
     if (err) {
       return console.log(err);
     }
-
     console.log(`The file was saved to ${outputFileLocation}!`);
   });
 }
