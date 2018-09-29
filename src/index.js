@@ -2,7 +2,6 @@ require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
 const vCard = require("vcard-parser");
-const Json2csvParser = require("json2csv").Parser;
 const { VCARD_INCLUDED_FIELDS, PREFIX, POSTFIX } = require("./const");
 
 const inputFiles = path.join(__dirname, "..", "input", "Example.vcf");
@@ -47,12 +46,16 @@ vcardsArray.map(item => {
     });
   });
   result.push(resultObject);
-
-  saveToCSV({
-    file: resultObject,
-    outputFileLocation: outputFileLocation(new Date().getTime())
+  const csv = saveToCSV(resultObject);
+  writeToFile({
+    outputFileLocation: outputFileLocation(new Date().getTime()),
+    file: csv
   });
 });
+// const csv = saveToCSV({
+//   mergeResultObjects(result),
+// // });
+// writeToFile({ outputFileLocation, file: csvFile });
 
 function parseKey({ key, i, meta, value }) {
   let result = `${key}`;
@@ -70,14 +73,19 @@ function parseMeta(meta = {}) {
     .toString();
 }
 
-function saveToCSV({ file, outputFileLocation }) {
+function saveToCSV(file) {
   try {
-    const fields = Object.keys(file);
-    const parser = new Json2csvParser({ fields });
-    const csvFile = parser.parse(file);
-    writeToFile({ outputFileLocation, file: csvFile });
+    const headers = Object.keys(file)
+      .map(item => `"${item}"`)
+      .toString();
+    const values = Object.values(file)
+      .map(item => `"${item}"`)
+      .toString();
+    const csvFile = headers + "\r\n" + values;
+    return csvFile;
   } catch (err) {
     console.error(err);
+    return null;
   }
 }
 
@@ -90,15 +98,11 @@ function writeToFile({ outputFileLocation, file }) {
     console.log(`The file was saved to ${outputFileLocation}!`);
   });
 }
-function mergeResultObjects(result) {
-	const maxKeysCount = Math.max(Object.keys())
-}
 
-function getCardItemsCount(vcard) {
-  console.log(vcard);
-  return vcard.split(new RegExp(PREFIX, "g")).length - 1;
-  // vcard instanceof String
-  // ?
-  // vcard.split(new RegExp(PREFIX, g)).length - 1;
-  // : undefined;
+function mergeResultObjects(result) {
+  const maxKeysCount = Math.max.apply(
+    Math,
+    result.map(obj => Object.keys(obj).length)
+  );
+  // if()
 }
