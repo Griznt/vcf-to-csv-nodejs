@@ -6,59 +6,82 @@ const Json2csvParser = require("json2csv").Parser;
 
 const { VCARD_INCLUDED_FIELDS, PREFIX, POSTFIX } = require("./const");
 
-const fileName = process.env.FILE_NAME || "Example.vcf";
+const dir = path.join(__dirname, "..", process.env.DIR || "input");
 
-const inputFiles = path.join(__dirname, "..", "input", fileName);
-const outputFiles = path.join(__dirname, "..", "output");
+loadAllFilesInDir(dir);
 
-const vcard = fs.readFileSync(inputFiles, "utf-8");
-
-const vcardsArray = vcard
-  .split(new RegExp(POSTFIX, "g"))
-  .filter(item => item.includes(PREFIX))
-  .map(item => (item += `\r\n${POSTFIX}`));
-
-const allPossibleHeaders = [];
-
-const outputFileLocation = uniqIdentifier =>
-  `${outputFiles}/${uniqIdentifier || ""}.csv`;
-
-const result = [];
-
-vcardsArray.map(item => {
-  const card = vCard.parse(item);
-  const resultObject = {};
-
-  Object.keys(card)
-    .filter(key => VCARD_INCLUDED_FIELDS.includes(key.toUpperCase()))
-    .map(key => {
-      const value = card[key];
-
-      value.forEach((item, i) => {
-        const meta = parseMeta(item.meta);
-        let k, v;
-        if (item.value instanceof Array) {
-          item.value.forEach((innerItem, j) => {
-            k = parseKey({ key, i: j, meta: null, value: innerItem });
-            v = innerItem;
-            resultObject[k] = v;
-          });
-        } else {
-          k = parseKey({ key, i, meta, value });
-          v = item.value;
-
-          resultObject[k] = v;
-        }
+function loadAllFilesInDir(dir) {
+  fs.readdir(dir, function(err, fileNames) {
+    if (err) {
+      console.log(err);
+      return {};
+    } else {
+      let objects = [];
+      fileNames.forEach(fileName => {
+        const vcard = fs.readFileSync(path.join(dir, fileName), "utf-8");
+        objects = objects.concat(objects, parseVCardToCsv(vcard));
       });
-    });
-  result.push(resultObject);
-});
+      const csv = saveToCSV(mergeResultObjects(objects));
+      writeToFile({
+        outputFileLocation: outputFileLocation(new Date().getTime()),
+        file: csv
+      });
+    }
+  });
+}
 
-const csv = saveToCSV(mergeResultObjects(result));
-writeToFile({
-  outputFileLocation: outputFileLocation(new Date().getTime()),
-  file: csv
-});
+function outputFileLocation(uniqIdentifier) {
+  const outputFiles = path.join(__dirname, "..", "output");
+  return `${outputFiles}/${uniqIdentifier || ""}.csv`;
+}
+
+function parseVCardToCsv(vcard) {
+  const vcardsArray = vcard
+    .split(new RegExp(POSTFIX, "g"))
+    .filter(item => item.includes(PREFIX))
+    .map(item => (item += `\r\n${POSTFIX}`));
+
+  const allPossibleHeaders = [];
+
+  const result = [];
+
+  vcardsArray.map(item => {
+    const card = vCard.parse(item);
+    const resultObject = {};
+
+    Object.keys(card)
+      .filter(key => VCARD_INCLUDED_FIELDS.includes(key.toUpperCase()))
+      .map(key => {
+        const value = card[key];
+
+        value.forEach((item, i) => {
+          const meta = parseMeta(item.meta);
+          let k, v;
+          if (item.value instanceof Array) {
+            item.value.forEach((innerItem, j) => {
+              k = parseKey({ key, i: j, meta: null, value: innerItem });
+              v = innerItem;
+              resultObject[k] = v;
+            });
+          } else {
+            k = parseKey({ key, i, meta, value });
+            v = item.value;
+
+            resultObject[k] = v;
+          }
+        });
+      });
+    result.push(resultObject);
+  });
+
+  return mergeResultObjects(result);
+
+  // const csv = saveToCSV(mergeResultObjects(result));
+  // writeToFile({
+  //   outputFileLocation: outputFileLocation(new Date().getTime()),
+  //   file: csv
+  // });
+}
 
 function parseKey({ key, i, meta, value }) {
   let result = `${key}`;
@@ -107,24 +130,29 @@ function writeToFile({ outputFileLocation, file }) {
 }
 
 function mergeResultObjects(results) {
-  const mergedObjects = [];
-  const allHeaders = results
-    .map(obj => Object.keys(obj))
-    .map(obj => {
-      return {
-        length: obj.length,
-        obj
-      };
-    })
-    .sort((o1, o2) => o1.length < o2.length)[0].obj;
+  try {
+    const mergedObjects = [];
+    const allHeaders = results
+      .map(obj => Object.keys(obj))
+      .map(obj => {
+        return {
+          length: obj.length,
+          obj
+        };
+      })
+      .sort((o1, o2) => o1.length < o2.length)[0].obj;
 
-  results.forEach(result => {
-    let object = {};
-    allHeaders.forEach(header => {
-      object[header] = result[header] || "";
+    results.forEach(result => {
+      let object = {};
+      allHeaders.forEach(header => {
+        object[header] = result[header] || "";
+      });
+      mergedObjects.push(object);
     });
-    mergedObjects.push(object);
-  });
 
-  return mergedObjects;
+    return mergedObjects;
+  } catch (error) {
+    console.log({ error });
+    return {};
+  }
 }
