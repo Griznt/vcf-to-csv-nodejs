@@ -11,27 +11,46 @@ const dir = path.join(__dirname, "..", process.env.DIR || "input");
 loadAllFilesInDir(dir);
 
 function loadAllFilesInDir(dir) {
-  fs.readdir(dir, function(err, fileNames) {
-    if (err) {
-      console.log(err);
-      return {};
-    } else {
-      let objects = [];
-      fileNames.forEach(fileName => {
-        const vcard = fs.readFileSync(path.join(dir, fileName), "utf-8");
-        objects = objects.concat(objects, parseVCardToCsv(vcard));
-      });
-      const csv = saveToCSV(mergeResultObjects(objects));
-      writeToFile({
-        outputFileLocation: outputFileLocation(new Date().getTime()),
-        file: csv
-      });
-    }
-  });
+  try {
+    fs.readdir(dir, function(err, fileNames) {
+      if (err) {
+        console.log(err);
+        return {};
+      } else {
+        let objects = [];
+        if (!fileNames || fileNames.length === 0) {
+          console.error("There are no files in directory!");
+          return null;
+        }
+        fileNames.forEach(fileName => {
+          if (fileName.includes(".vcf")) {
+            const vcard = fs.readFileSync(path.join(dir, fileName), "utf-8");
+            objects = objects.concat(objects, parseVCardToCsv(vcard));
+          }
+        });
+        if (objects.length != 0) {
+          const csv = saveToCSV(mergeResultObjects(objects));
+          writeToFile({
+            outputFileLocation: outputFileLocation(new Date().getTime()),
+            file: csv
+          });
+        } else {
+          console.error("There are no .vcf files!");
+          return null;
+        }
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }
 
 function outputFileLocation(uniqIdentifier) {
   const outputFiles = path.join(__dirname, "..", "output");
+  if (!fs.existsSync(outputFiles)) {
+    fs.mkdirSync(outputFiles);
+  }
   return `${outputFiles}/${uniqIdentifier || ""}.csv`;
 }
 
@@ -114,7 +133,7 @@ function saveToCSV(arrayofObjects) {
 function writeToFile({ outputFileLocation, file }) {
   fs.writeFile(outputFileLocation, file, function(err) {
     if (err) {
-      return console.log(err);
+      return console.error(err);
     }
     console.log(`The file was saved to ${outputFileLocation}!`);
   });
@@ -123,15 +142,17 @@ function writeToFile({ outputFileLocation, file }) {
 function mergeResultObjects(results) {
   try {
     const mergedObjects = [];
-    const allHeaders = results
-      .map(obj => Object.keys(obj))
-      .map(obj => {
-        return {
-          length: obj.length,
-          obj
-        };
-      })
-      .sort((o1, o2) => o1.length < o2.length)[0].obj;
+    const allHeaders = (
+      results
+        .map(obj => Object.keys(obj))
+        .map(obj => {
+          return {
+            length: obj.length,
+            obj
+          };
+        })
+        .sort((o1, o2) => o1.length < o2.length)[0] || {}
+    ).obj;
 
     results.forEach(result => {
       let object = {};
@@ -143,7 +164,7 @@ function mergeResultObjects(results) {
 
     return mergedObjects;
   } catch (error) {
-    console.log({ error });
+    console.error(error);
     return {};
   }
 }
