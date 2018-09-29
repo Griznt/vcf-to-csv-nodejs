@@ -12,6 +12,9 @@ loadAllFilesInDir(dir);
 
 function loadAllFilesInDir(dir) {
   try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
     fs.readdir(dir, function(err, fileNames) {
       if (err) {
         console.log(err);
