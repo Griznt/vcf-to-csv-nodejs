@@ -2,9 +2,13 @@ require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
 const vCard = require("vcard-parser");
+const Json2csvParser = require("json2csv").Parser;
+
 const { VCARD_INCLUDED_FIELDS, PREFIX, POSTFIX } = require("./const");
 
-const inputFiles = path.join(__dirname, "..", "input", "Example.vcf");
+const fileName = process.env.FILE_NAME || "Example.vcf";
+
+const inputFiles = path.join(__dirname, "..", "input", fileName);
 const outputFiles = path.join(__dirname, "..", "output");
 
 const vcard = fs.readFileSync(inputFiles, "utf-8");
@@ -14,7 +18,7 @@ const vcardsArray = vcard
   .filter(item => item.includes(PREFIX))
   .map(item => (item += `\r\n${POSTFIX}`));
 
-const objects = [];
+const allPossibleHeaders = [];
 
 const outputFileLocation = uniqIdentifier =>
   `${outputFiles}/${uniqIdentifier || ""}.csv`;
@@ -25,37 +29,36 @@ vcardsArray.map(item => {
   const card = vCard.parse(item);
   const resultObject = {};
 
-  Object.keys(card).map(key => {
-    const value = card[key];
+  Object.keys(card)
+    .filter(key => VCARD_INCLUDED_FIELDS.includes(key.toUpperCase()))
+    .map(key => {
+      const value = card[key];
 
-    value.forEach((item, i) => {
-      const meta = parseMeta(item.meta);
-      let k, v;
-      if (item.value instanceof Array) {
-        item.value.forEach((innerItem, j) => {
-          k = parseKey({ key, i: j, meta: null, value: innerItem });
-          v = innerItem;
+      value.forEach((item, i) => {
+        const meta = parseMeta(item.meta);
+        let k, v;
+        if (item.value instanceof Array) {
+          item.value.forEach((innerItem, j) => {
+            k = parseKey({ key, i: j, meta: null, value: innerItem });
+            v = innerItem;
+            resultObject[k] = v;
+          });
+        } else {
+          k = parseKey({ key, i, meta, value });
+          v = item.value;
+
           resultObject[k] = v;
-        });
-      } else {
-        k = parseKey({ key, i, meta, value });
-        v = item.value;
-
-        resultObject[k] = v;
-      }
+        }
+      });
     });
-  });
   result.push(resultObject);
-  const csv = saveToCSV(resultObject);
-  writeToFile({
-    outputFileLocation: outputFileLocation(new Date().getTime()),
-    file: csv
-  });
 });
-// const csv = saveToCSV({
-//   mergeResultObjects(result),
-// // });
-// writeToFile({ outputFileLocation, file: csvFile });
+
+const csv = saveToCSV(mergeResultObjects(result));
+writeToFile({
+  outputFileLocation: outputFileLocation(new Date().getTime()),
+  file: csv
+});
 
 function parseKey({ key, i, meta, value }) {
   let result = `${key}`;
@@ -73,15 +76,19 @@ function parseMeta(meta = {}) {
     .toString();
 }
 
-function saveToCSV(file) {
+function saveToCSV(arrayofObjects) {
   try {
-    const headers = Object.keys(file)
-      .map(item => `"${item}"`)
-      .toString();
-    const values = Object.values(file)
-      .map(item => `"${item}"`)
-      .toString();
-    const csvFile = headers + "\r\n" + values;
+    // const headers = Object.keys(file)
+    //   .map(item => `"${item}"`)
+    //   .toString();
+    // const values = Object.values(file)
+    //   .map(item => `"${item}"`)
+    //   .toString();
+    // const csvFile = headers + "\r\n" + values;
+    // return csvFile;
+    const fields = Object.keys(arrayofObjects[0]);
+    const parser = new Json2csvParser({ fields });
+    const csvFile = parser.parse(arrayofObjects);
     return csvFile;
   } catch (err) {
     console.error(err);
@@ -99,10 +106,25 @@ function writeToFile({ outputFileLocation, file }) {
   });
 }
 
-function mergeResultObjects(result) {
-  const maxKeysCount = Math.max.apply(
-    Math,
-    result.map(obj => Object.keys(obj).length)
-  );
-  // if()
+function mergeResultObjects(results) {
+  const mergedObjects = [];
+  const allHeaders = results
+    .map(obj => Object.keys(obj))
+    .map(obj => {
+      return {
+        length: obj.length,
+        obj
+      };
+    })
+    .sort((o1, o2) => o1.length < o2.length)[0].obj;
+
+  results.forEach(result => {
+    let object = {};
+    allHeaders.forEach(header => {
+      object[header] = result[header] || "";
+    });
+    mergedObjects.push(object);
+  });
+
+  return mergedObjects;
 }
