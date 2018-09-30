@@ -18,7 +18,7 @@ const {
   VCARD_INCLUDED_FIELDS,
   PREFIX,
   POSTFIX,
-  VCARD_HEADLINES_MAPPING
+  VCARD_HEADLINES_MAPPING_2
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -29,8 +29,9 @@ const outputDir = path.join(
   process.env.OUTPUT_DIR || "output"
 );
 
-const allHeaders = VCARD_HEADLINES_MAPPING.map(item =>
-  Object.values(item)[0].replace(",", ";")
+const allHeaders = VCARD_HEADLINES_MAPPING_2.map(
+  item => Object.keys(item)[0]
+  // .replace(",", ";")
 );
 
 loadAllFilesInDir(inputDir);
@@ -42,7 +43,7 @@ function loadAllFilesInDir(dir) {
     }
     fs.readdir(dir, function(err, fileNames) {
       if (err) {
-        console.log(err);
+        console.error(err);
         return {};
       } else {
         let objects = [];
@@ -57,7 +58,7 @@ function loadAllFilesInDir(dir) {
           }
         });
         if (objects.length != 0) {
-          const csv = saveToCSV(mergeResultObjects(objects));
+          const csv = saveToCSV(mergeResultObjects(objects, true));
           writeToFile({
             outputFileLocation: outputFileLocation(new Date().getTime()),
             file: csv
@@ -99,14 +100,13 @@ function parseVCardToCsv(vcard) {
       .filter(key => VCARD_INCLUDED_FIELDS.includes(key.toUpperCase()))
       .map(key => {
         const value = card[key];
-
         value.forEach((item, i) => {
           const meta = parseMeta(item.meta);
           let k, v;
           if (item.value instanceof Array) {
             item.value.forEach((innerItem, j) => {
               k = parseKey({
-                key: key,
+                key,
                 i: j,
                 meta: null,
                 value: innerItem
@@ -124,7 +124,6 @@ function parseVCardToCsv(vcard) {
       });
     result.push(resultObject);
   });
-
   return mergeResultObjects(result);
 }
 
@@ -140,7 +139,13 @@ function parseKey({ key, i, meta, value }) {
 
 function parseMeta(meta = {}) {
   return Object.keys(meta)
-    .map(k => `;${k.toUpperCase()}=${meta[k][0].replace(",", ";")}`)
+    .map(
+      k =>
+        `;${k.toUpperCase()}=${
+          meta[k][0]
+          // .replace(",", ";")
+        }`
+    )
     .toString();
 }
 
@@ -165,20 +170,34 @@ function writeToFile({ outputFileLocation, file }) {
   });
 }
 
-function mergeResultObjects(results) {
+function mergeResultObjects(results, isFinal = false) {
   try {
     const mergedObjects = [];
     results.forEach(result => {
       let object = {};
       allHeaders.forEach(header => {
-        object[header] = result[header] || "";
+        const key = isFinal ? mapVcardColumnToHeadline(header) : header;
+        object[key] = result[header] || "";
+        // if (!isFinal && header.includes("TIT"))
+        //   console.log(
+        //     result,
+        //     `searching key "${header}" result is: "${result[header]}"`
+        //   );
       });
       mergedObjects.push(object);
     });
-
     return mergedObjects;
   } catch (error) {
     console.error(error);
     return {};
+  }
+}
+
+function mapVcardColumnToHeadline(header) {
+  try {
+    return VCARD_HEADLINES_MAPPING_2.filter(item => !!item[header])[0][header];
+  } catch (error) {
+    console.error("Columns mapping error:", error);
+    return header;
   }
 }

@@ -49,9 +49,9 @@ module.exports = Object.freeze({
   ],
   VCARD_HEADLINES_MAPPING_2: [
     { "X-GENDER": "Geschlecht" },
-    { "N:1": "Vorname" },
-    { "N:2": "Mittelname" },
-    { "N:3": "Nachname" },
+    { "N:2": "Vorname" },
+    { "N:3": "Mittelname" },
+    { "N:1": "Nachname" },
     { TITLE: "Titel" },
     { ORG: "Accountname" },
     { "ADR:3": "Strasse (Postanschrift)" },
@@ -74,11 +74,11 @@ module.exports = Object.freeze({
     { "BDAY;ALTID=1": "Geburtsdatum" },
     { "TEL;TYPE=home,voice": "Telefon privat" },
     { "ADR:1": "Postanschrift Zeile 1" },
-    { "ADR:1": "Postanschrift Zeile 2" },
+    { "ADR:2": "Postanschrift Zeile 2" },
     { "PHOTO;VALUE=uri": "Photo" },
     { URL: "Website" },
     { NICKNAME: "Nickname" },
-    { "IMPP;X-SERVICE-TYPE=Skype:skype": "Skype ID" }
+    { "IMPP;X-SERVICE-TYPE=Skype": "Skype ID" }
   ],
   PREFIX: "BEGIN:VCARD",
   POSTFIX: "END:VCARD"
