@@ -4,11 +4,27 @@ const fs = require("fs");
 const vCard = require("vcard-parser");
 const Json2csvParser = require("json2csv").Parser;
 
+/**
+ * TODO:
+ * 1. to add headlines
+ * 2. to map headlines to column names
+ * 3. to add headlines quick changing feature (from external settings file or .env)
+ * 4. to add compabiliaty with AWS lambda function
+ * 5. to add creation a deployment package for AWS
+ *
+ */
+
 const { VCARD_INCLUDED_FIELDS, PREFIX, POSTFIX } = require("./const");
 
-const dir = path.join(__dirname, "..", process.env.DIR || "input");
+const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
 
-loadAllFilesInDir(dir);
+const outputDir = path.join(
+  __dirname,
+  "..",
+  process.env.OUTPUT_DIR || "output"
+);
+
+loadAllFilesInDir(inputDir);
 
 function loadAllFilesInDir(dir) {
   try {
@@ -50,11 +66,10 @@ function loadAllFilesInDir(dir) {
 }
 
 function outputFileLocation(uniqIdentifier) {
-  const outputFiles = path.join(__dirname, "..", "output");
-  if (!fs.existsSync(outputFiles)) {
-    fs.mkdirSync(outputFiles);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
   }
-  return `${outputFiles}/${uniqIdentifier || ""}.csv`;
+  return path.join(outputDir, `/${uniqIdentifier || "output"}.csv`);
 }
 
 function parseVCardToCsv(vcard) {
@@ -97,12 +112,6 @@ function parseVCardToCsv(vcard) {
   });
 
   return mergeResultObjects(result);
-
-  // const csv = saveToCSV(mergeResultObjects(result));
-  // writeToFile({
-  //   outputFileLocation: outputFileLocation(new Date().getTime()),
-  //   file: csv
-  // });
 }
 
 function parseKey({ key, i, meta, value }) {
