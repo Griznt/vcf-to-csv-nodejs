@@ -3,14 +3,13 @@ const path = require("path");
 const fs = require("fs");
 const vCard = require("vcard-parser");
 const Json2csvParser = require("json2csv").Parser;
+const moment = require("moment");
 
 /**
  * TODO:
- * 1. to add headlines
- * 2. to map headlines to column names
- * 3. to add headlines quick changing feature (from external settings file or .env)
- * 4. to add compabiliaty with AWS lambda function
- * 5. to add creation a deployment package for AWS
+ * 1. to add headlines quick changing feature (from external settings file or .env)
+ * 2. to add compabiliaty with AWS lambda function
+ * 3. to add creation a deployment package for AWS
  *
  */
 
@@ -29,10 +28,7 @@ const outputDir = path.join(
   process.env.OUTPUT_DIR || "output"
 );
 
-const allHeaders = VCARD_HEADLINES_MAPPING_2.map(
-  item => Object.keys(item)[0]
-  // .replace(",", ";")
-);
+const allHeaders = VCARD_HEADLINES_MAPPING_2.map(item => Object.keys(item)[0]);
 
 loadAllFilesInDir(inputDir);
 
@@ -111,14 +107,13 @@ function parseVCardToCsv(vcard) {
                 meta: null,
                 value: innerItem
               });
-              v = innerItem;
+              v = parseData(innerItem);
               resultObject[k] = v;
             });
           } else {
             k = parseKey({ key, i, meta, value });
-            v = item.value;
-
-            resultObject[k] = v;
+            v = parseData(item.value.toString());
+            if (!resultObject[k]) resultObject[k] = v;
           }
         });
       });
@@ -139,14 +134,20 @@ function parseKey({ key, i, meta, value }) {
 
 function parseMeta(meta = {}) {
   return Object.keys(meta)
-    .map(
-      k =>
-        `;${k.toUpperCase()}=${
-          meta[k][0]
-          // .replace(",", ";")
-        }`
-    )
+    .map(k => `;${k.toUpperCase()}=${meta[k][0]}`)
     .toString();
+}
+
+function parseData(string) {
+  try {
+    if (string.match(/([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/)) {
+      return moment(string).format("DD/MM/YYYY");
+    }
+    return string;
+  } catch (error) {
+    console.error("Date parsing error: ", error);
+    return date;
+  }
 }
 
 function saveToCSV(arrayofObjects) {
@@ -178,11 +179,6 @@ function mergeResultObjects(results, isFinal = false) {
       allHeaders.forEach(header => {
         const key = isFinal ? mapVcardColumnToHeadline(header) : header;
         object[key] = result[header] || "";
-        // if (!isFinal && header.includes("TIT"))
-        //   console.log(
-        //     result,
-        //     `searching key "${header}" result is: "${result[header]}"`
-        //   );
       });
       mergedObjects.push(object);
     });

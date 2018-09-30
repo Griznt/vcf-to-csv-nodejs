@@ -11,7 +11,7 @@ module.exports = Object.freeze({
     "BDAY",
     "PHOTO",
     "URL",
-    "NICKNAME,",
+    "NICKNAME",
     "IMPP"
   ],
   VCARD_HEADLINES_MAPPING: [
@@ -38,7 +38,7 @@ module.exports = Object.freeze({
     { "AboutMe ID": "X-SOCIALPROFILE;TYPE=aboutme" },
     { "Google ID": "X-SOCIALPROFILE;TYPE=google" },
     { Abteilung: "ORG:2" },
-    { Geburtsdatum: "BDAY;ALTID=1" },
+    { "Geburtsdatum:1": "BDAY;ALTID=1" },
     { "Telefon privat": "TEL;TYPE=home,voice" },
     { "Postanschrift Zeile 1": "ADR:1" },
     { "Postanschrift Zeile 2": "ADR:1" },
@@ -52,8 +52,8 @@ module.exports = Object.freeze({
     { "N:2": "Vorname" },
     { "N:3": "Mittelname" },
     { "N:1": "Nachname" },
-    { TITLE: "Titel" },
-    { ORG: "Accountname" },
+    { "TITLE:1": "Titel" },
+    { "ORG:1": "Accountname" },
     { "ADR:3": "Strasse (Postanschrift)" },
     { "ADR:4": "Stadt (Postanschrift)" },
     { "ADR:5": "Bundesland (Postanschrift)" },
@@ -76,7 +76,7 @@ module.exports = Object.freeze({
     { "ADR:1": "Postanschrift Zeile 1" },
     { "ADR:2": "Postanschrift Zeile 2" },
     { "PHOTO;VALUE=uri": "Photo" },
-    { URL: "Website" },
+    { "URL:1": "Website" },
     { NICKNAME: "Nickname" },
     { "IMPP;X-SERVICE-TYPE=Skype": "Skype ID" }
   ],

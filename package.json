@@ -12,6 +12,7 @@
   "dependencies": {
     "dotenv": "6.0.0",
     "json2csv": "4.2.1",
+    "moment": "2.22.2",
     "vcard-parser": "1.0.0"
   }
 }
