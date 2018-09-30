@@ -14,7 +14,12 @@ const Json2csvParser = require("json2csv").Parser;
  *
  */
 
-const { VCARD_INCLUDED_FIELDS, PREFIX, POSTFIX } = require("./const");
+const {
+  VCARD_INCLUDED_FIELDS,
+  PREFIX,
+  POSTFIX,
+  VCARD_HEADLINES_MAPPING
+} = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
 
@@ -22,6 +27,10 @@ const outputDir = path.join(
   __dirname,
   "..",
   process.env.OUTPUT_DIR || "output"
+);
+
+const allHeaders = VCARD_HEADLINES_MAPPING.map(item =>
+  Object.values(item)[0].replace(",", ";")
 );
 
 loadAllFilesInDir(inputDir);
@@ -96,7 +105,12 @@ function parseVCardToCsv(vcard) {
           let k, v;
           if (item.value instanceof Array) {
             item.value.forEach((innerItem, j) => {
-              k = parseKey({ key, i: j, meta: null, value: innerItem });
+              k = parseKey({
+                key: key,
+                i: j,
+                meta: null,
+                value: innerItem
+              });
               v = innerItem;
               resultObject[k] = v;
             });
@@ -115,7 +129,7 @@ function parseVCardToCsv(vcard) {
 }
 
 function parseKey({ key, i, meta, value }) {
-  let result = `${key}`;
+  let result = `${key.toUpperCase()}`;
   if (meta && meta.length > 0) {
     result += meta;
   } else if (value.length > 1) {
@@ -126,7 +140,7 @@ function parseKey({ key, i, meta, value }) {
 
 function parseMeta(meta = {}) {
   return Object.keys(meta)
-    .map(k => `;${k.toUpperCase()}=${meta[k][0]}`)
+    .map(k => `;${k.toUpperCase()}=${meta[k][0].replace(",", ";")}`)
     .toString();
 }
 
@@ -154,18 +168,6 @@ function writeToFile({ outputFileLocation, file }) {
 function mergeResultObjects(results) {
   try {
     const mergedObjects = [];
-    const allHeaders = (
-      results
-        .map(obj => Object.keys(obj))
-        .map(obj => {
-          return {
-            length: obj.length,
-            obj
-          };
-        })
-        .sort((o1, o2) => o1.length < o2.length)[0] || {}
-    ).obj;
-
     results.forEach(result => {
       let object = {};
       allHeaders.forEach(header => {
