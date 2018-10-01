@@ -5,6 +5,8 @@ const vCard = require("vcard-parser");
 const Json2csvParser = require("json2csv").Parser;
 const moment = require("moment");
 
+require("isomorphic-fetch");
+
 /**
  * TODO:
  * 1. to add headlines quick changing feature (from external settings file or .env)
@@ -29,6 +31,11 @@ const outputDir = path.join(
 );
 
 const allHeaders = VCARD_HEADLINES_MAPPING_2.map(item => Object.keys(item)[0]);
+
+const UPLOAD_TO_DROPBOX = process.env.UPLOAD_TO_DROPBOX === "true";
+
+const OUTPUT_FILENAME = `${process.env.OUTPUT_FILENAME ||
+  new Date().getTime()}.csv`;
 
 loadAllFilesInDir(inputDir);
 
@@ -55,10 +62,17 @@ function loadAllFilesInDir(dir) {
         });
         if (objects.length != 0) {
           const csv = saveToCSV(mergeResultObjects(objects, true));
-          writeToFile({
-            outputFileLocation: outputFileLocation(new Date().getTime()),
-            file: csv
-          });
+
+          if (UPLOAD_TO_DROPBOX) {
+            uploadToDropbox({
+              name: OUTPUT_FILENAME,
+              content: new Buffer(csv)
+            });
+          } else
+            writeToFile({
+              outputFileLocation: outputFileLocation(OUTPUT_FILENAME),
+              file: csv
+            });
         } else {
           console.error("There are no .vcf files!");
           return null;
@@ -71,11 +85,11 @@ function loadAllFilesInDir(dir) {
   }
 }
 
-function outputFileLocation(uniqIdentifier) {
+function outputFileLocation(filename) {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
   }
-  return path.join(outputDir, `/${uniqIdentifier || "output"}.csv`);
+  return path.join(outputDir, filename);
 }
 
 function parseVCardToCsv(vcard) {
@@ -163,7 +177,7 @@ function saveToCSV(arrayofObjects) {
 }
 
 function writeToFile({ outputFileLocation, file }) {
-  fs.writeFile(outputFileLocation, file, function(err) {
+  fs.writeFileSync(outputFileLocation, file, function(err) {
     if (err) {
       return console.error(err);
     }
@@ -196,4 +210,28 @@ function mapVcardColumnToHeadline(header) {
     console.error("Columns mapping error:", error);
     return header;
   }
+}
+
+function uploadToDropbox(file) {
+  const Dropbox = require("dropbox").Dropbox;
+  const DBX_ACCESS_TOKEN = process.env.DBX_ACCESS_TOKEN;
+  const DBX_UPLOAD_SUB_FOLDER = process.env.DBX_UPLOAD_SUB_FOLDER;
+
+  const uploadingPath = `/${
+    DBX_UPLOAD_SUB_FOLDER ? `${DBX_UPLOAD_SUB_FOLDER}/` : ""
+  }${file.name}`;
+
+  const dbx = new Dropbox({ accessToken: DBX_ACCESS_TOKEN });
+
+  dbx
+    .filesUpload({
+      path: uploadingPath,
+      contents: file.content
+    })
+    .then(function(response) {
+      console.log(`File "${uploadingPath}" is successfully uploaded!`);
+    })
+    .catch(function(err) {
+      console.log(`File "${uploadingPath}"uploading exception:`, err);
+    });
 }

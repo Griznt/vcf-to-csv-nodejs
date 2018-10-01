@@ -11,6 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "6.0.0",
+    "dropbox": "4.0.9",
+    "es6-promise": "4.2.5",
+    "isomorphic-fetch": "2.2.1",
     "json2csv": "4.2.1",
     "moment": "2.22.2",
     "vcard-parser": "1.0.0"

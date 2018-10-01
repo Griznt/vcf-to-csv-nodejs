@@ -10,10 +10,13 @@
 
 ### .env
 
-`DIR=dirWithFiles`
-
-You can specify the dir with source `.vcf` files or `/input` will be used by default
+- `INPUT_DIR=` You can specify the input dolder with source `.vcf` files or `/input` will be used by default
+- `UPLOAD_TO_DROPBOX=` If true, output file will be uploaded to DropBox
+- `DBX_UPLOAD_SUB_FOLDER=` You can specify the subfolder in our dropbox for uploading file or `/` be used by default
+- `DBX_ACCESS_TOKEN=` Your DropBox Access Token (You cen create it here: https://www.dropbox.com/developers)
+- `OUTPUT_FILENAME=` You can specify the output filename or timestamp will be used by default
 
 ### output
 
-Output `.csv` file will be saved in `/output` directory
+If `UPLOAD_TO_DROPBOX` is true the output file will be uploaded to your DropBox account.
+In another case the `.csv` file will be saved in `/output` directory
