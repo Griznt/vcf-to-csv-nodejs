@@ -10,10 +10,10 @@
 
 ### .env
 
-- `INPUT_DIR=` You can specify the input dolder with source `.vcf` files or `/input` will be used by default
+- `INPUT_DIR=` You can specify the input folder with source `.vcf` files or `/input` will be used by default
 - `UPLOAD_TO_DROPBOX=` If true, output file will be uploaded to DropBox
 - `DBX_UPLOAD_SUB_FOLDER=` You can specify the subfolder in our dropbox for uploading file or `/` be used by default
-- `DBX_ACCESS_TOKEN=` Your DropBox Access Token (You cen create it here: https://www.dropbox.com/developers)
+- `DBX_ACCESS_TOKEN=` Your DropBox Access Token (You can create it here: https://www.dropbox.com/developers)
 - `OUTPUT_FILENAME=` You can specify the output filename or timestamp will be used by default
 - `HEADLINES_MAPPING_FILENAME=` You can specify mapping file name
 
