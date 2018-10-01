@@ -81,5 +81,6 @@ module.exports = Object.freeze({
     { "IMPP;X-SERVICE-TYPE=Skype": "Skype ID" }
   ],
   PREFIX: "BEGIN:VCARD",
-  POSTFIX: "END:VCARD"
+  POSTFIX: "END:VCARD",
+  HEADLINES_MAPPING_FILENAME: "headlines-mapping.json"
 });

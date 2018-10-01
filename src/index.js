@@ -9,9 +9,8 @@ require("isomorphic-fetch");
 
 /**
  * TODO:
- * 1. to add headlines quick changing feature (from external settings file or .env)
- * 2. to add compabiliaty with AWS lambda function
- * 3. to add creation a deployment package for AWS
+ * 1. to add compabiliaty with AWS lambda function
+ * 2. to add creation a deployment package for AWS
  *
  */
 
@@ -19,7 +18,8 @@ const {
   VCARD_INCLUDED_FIELDS,
   PREFIX,
   POSTFIX,
-  VCARD_HEADLINES_MAPPING_2
+  VCARD_HEADLINES_MAPPING_2,
+  HEADLINES_MAPPING_FILENAME
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -30,7 +30,15 @@ const outputDir = path.join(
   process.env.OUTPUT_DIR || "output"
 );
 
-const allHeaders = VCARD_HEADLINES_MAPPING_2.map(item => Object.keys(item)[0]);
+const headlinesMappingFilePath = path.join(
+  __dirname,
+  "/",
+  HEADLINES_MAPPING_FILENAME
+);
+
+const HEADLINES_MAPPING = loadHeadlinesMappingFile();
+
+const allHeaders = HEADLINES_MAPPING.map(item => Object.keys(item)[0]);
 
 const UPLOAD_TO_DROPBOX = process.env.UPLOAD_TO_DROPBOX === "true";
 
@@ -38,6 +46,26 @@ const OUTPUT_FILENAME = `${process.env.OUTPUT_FILENAME ||
   new Date().getTime()}.csv`;
 
 loadAllFilesInDir(inputDir);
+
+function loadHeadlinesMappingFile() {
+  if (!fs.existsSync(headlinesMappingFilePath)) {
+    throw new Error(
+      `There are no headlines mapping file "${headlinesMappingFilePath}"! Will used default mapping.`
+    );
+  } else {
+    try {
+      const file = fs.readFileSync(
+        path.join(headlinesMappingFilePath),
+        "utf-8"
+      );
+
+      return JSON.parse(file);
+    } catch (error) {
+      console.error(error);
+      return VCARD_HEADLINES_MAPPING_2;
+    }
+  }
+}
 
 function loadAllFilesInDir(dir) {
   try {
@@ -205,7 +233,7 @@ function mergeResultObjects(results, isFinal = false) {
 
 function mapVcardColumnToHeadline(header) {
   try {
-    return VCARD_HEADLINES_MAPPING_2.filter(item => !!item[header])[0][header];
+    return HEADLINES_MAPPING.filter(item => !!item[header])[0][header];
   } catch (error) {
     console.error("Columns mapping error:", error);
     return header;
