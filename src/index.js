@@ -19,7 +19,7 @@ const {
   PREFIX,
   POSTFIX,
   VCARD_HEADLINES_MAPPING_2,
-  HEADLINES_MAPPING_FILENAME
+  HEADLINES_MAPPING_FILENAME_2
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -29,6 +29,9 @@ const outputDir = path.join(
   "..",
   process.env.OUTPUT_DIR || "output"
 );
+
+const HEADLINES_MAPPING_FILENAME =
+  process.env.HEADLINES_MAPPING_FILENAME || HEADLINES_MAPPING_FILENAME_2;
 
 const headlinesMappingFilePath = path.join(
   __dirname,
@@ -49,9 +52,11 @@ loadAllFilesInDir(inputDir);
 
 function loadHeadlinesMappingFile() {
   if (!fs.existsSync(headlinesMappingFilePath)) {
-    throw new Error(
+    console.error(
       `There are no headlines mapping file "${headlinesMappingFilePath}"! Will used default mapping.`
     );
+
+    return VCARD_HEADLINES_MAPPING_2;
   } else {
     try {
       const file = fs.readFileSync(

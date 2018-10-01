@@ -82,5 +82,5 @@ module.exports = Object.freeze({
   ],
   PREFIX: "BEGIN:VCARD",
   POSTFIX: "END:VCARD",
-  HEADLINES_MAPPING_FILENAME: "headlines-mapping.json"
+  HEADLINES_MAPPING_FILENAME_2: "headlines-mapping.json"
 });

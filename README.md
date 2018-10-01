@@ -15,6 +15,7 @@
 - `DBX_UPLOAD_SUB_FOLDER=` You can specify the subfolder in our dropbox for uploading file or `/` be used by default
 - `DBX_ACCESS_TOKEN=` Your DropBox Access Token (You cen create it here: https://www.dropbox.com/developers)
 - `OUTPUT_FILENAME=` You can specify the output filename or timestamp will be used by default
+- `HEADLINES_MAPPING_FILENAME=` You can specify mapping file name
 
 ### output
 
