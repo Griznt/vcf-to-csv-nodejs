@@ -1,0 +1,8 @@
+# aws-start-point.yml 
+service: my-service  
+provider:   
+  name: aws   
+  runtime: nodejs8.10  
+functions:
+  start:
+    handler: aws-start-point.start

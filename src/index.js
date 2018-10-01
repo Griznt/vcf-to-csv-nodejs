@@ -7,13 +7,6 @@ const moment = require("moment");
 
 require("isomorphic-fetch");
 
-/**
- * TODO:
- * 1. to add compabiliaty with AWS lambda function
- * 2. to add creation a deployment package for AWS
- *
- */
-
 const {
   VCARD_INCLUDED_FIELDS,
   PREFIX,
@@ -101,11 +94,13 @@ function loadAllFilesInDir(dir) {
               name: OUTPUT_FILENAME,
               content: new Buffer(csv)
             });
-          } else
+          } else {
             writeToFile({
               outputFileLocation: outputFileLocation(OUTPUT_FILENAME),
               file: csv
             });
+            console.log("Results successfully writen in the file");
+          }
         } else {
           console.error("There are no .vcf files!");
           return null;
@@ -268,3 +263,7 @@ function uploadToDropbox(file) {
       console.log(`File "${uploadingPath}"uploading exception:`, err);
     });
 }
+
+exports.start = function() {
+  loadAllFilesInDir(inputDir, callback);
+};
