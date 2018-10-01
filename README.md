@@ -21,3 +21,7 @@
 
 If `UPLOAD_TO_DROPBOX` is true the output file will be uploaded to your DropBox account.
 In another case the `.csv` file will be saved in `/output` directory
+
+### run in AWS lambda
+
+App can work in lambda function. Entry point is `aws-start-point.js`. Also provided `aws-start-point.yml`.
