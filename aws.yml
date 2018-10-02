@@ -1,0 +1,8 @@
+# aws.yml
+service: parse-vcard-to-csv
+provider:
+  name: aws
+  runtime: nodejs8.10
+functions:
+  start:
+    handler: aws.start

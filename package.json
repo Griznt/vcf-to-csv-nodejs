@@ -2,10 +2,9 @@
   "name": "vcf_to_csv",
   "version": "1.0.0",
   "description": "vcf cards to csv converter for Andre Daus",
-  "main": "index.js",
+  "main": "start.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node aws-start-point.js"
+    "start": "node aws.js"
   },
   "author": "akramovmv@gmail.com",
   "license": "ISC",

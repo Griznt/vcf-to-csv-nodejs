@@ -105,6 +105,7 @@ function loadAllFilesInDir(dir) {
             });
             console.log(`Results successfully written in the file ${parh}`);
           }
+          return csv;
         } else {
           console.error("There are no .vcf files!");
           return null;
@@ -304,6 +305,12 @@ function uploadToDropbox(file) {
     });
 }
 
-exports.start = function() {
-  loadAllFilesInDir(inputDir, callback);
+exports.start = async function(callback) {
+  const isInLambda = !!process.env.LAMBDA_TASK_ROOT;
+  const result = await loadAllFilesInDir(inputDir);
+
+  if (isInLambda)
+    if (!!result) callback(null, "Parsing successfylly finished!");
+    else callback("parsing finishing with errors!");
+  return !!result;
 };
