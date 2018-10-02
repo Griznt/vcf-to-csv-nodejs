@@ -200,13 +200,8 @@ function parseVCardToCsv(vcard) {
     }
 
     result.push(resultObject);
-    console.log({ resultObject });
   });
   return mergeResultObjects(result);
-}
-
-function additionalParsing(resultObject) {
-
 }
 
 function getObjectkey(object) {
