@@ -14,39 +14,6 @@ module.exports = Object.freeze({
     "NICKNAME",
     "IMPP"
   ],
-  VCARD_HEADLINES_MAPPING: [
-    { Geschlecht: "X-GENDER" },
-    { Vorname: "N:1" },
-    { Mittelname: "N:2" },
-    { Nachname: "N:3" },
-    { Titel: "TITLE" },
-    { Accountname: "ORG" },
-    { "Strasse (Postanschrift)": "ADR:3" },
-    { "Stadt (Postanschrift)": "ADR:4" },
-    { "Bundesland (Postanschrift)": "ADR:5" },
-    { "PLZ (Postanschrift)": "ADR:6" },
-    { "Land (Postanschrift)": "ADR:7" },
-    { Telefon: "TEL;TYPE=work,voice" },
-    { Fax: "TEL;TYPE=work,fax" },
-    { Mobiltelefon: "TEL;TYPE=cell,voice" },
-    { "E-Mail": "EMAIL;TYPE=work" },
-    { Accountinhaber: "" },
-    { "LinkedIn ID": "X-SOCIALPROFILE;TYPE=linkedin" },
-    { "Xing ID": "X-SOCIALPROFILE;TYPE=xing" },
-    { "Twitter ID": "X-SOCIALPROFILE;TYPE=twitter" },
-    { "Facebook ID": "X-SOCIALPROFILE;TYPE=facebook" },
-    { "AboutMe ID": "X-SOCIALPROFILE;TYPE=aboutme" },
-    { "Google ID": "X-SOCIALPROFILE;TYPE=google" },
-    { Abteilung: "ORG:2" },
-    { "Geburtsdatum:1": "BDAY;ALTID=1" },
-    { "Telefon privat": "TEL;TYPE=home,voice" },
-    { "Postanschrift Zeile 1": "ADR:1" },
-    { "Postanschrift Zeile 2": "ADR:1" },
-    { Photo: "PHOTO;VALUE=uri" },
-    { Website: "URL" },
-    { Nickname: "NICKNAME" },
-    { "Skype ID": "IMPP;X-SERVICE-TYPE=Skype:skype" }
-  ],
   VCARD_HEADLINES_MAPPING_2: [
     { "X-GENDER": "Geschlecht" },
     { "N:2": "Vorname" },
@@ -82,5 +49,6 @@ module.exports = Object.freeze({
   ],
   PREFIX: "BEGIN:VCARD",
   POSTFIX: "END:VCARD",
-  HEADLINES_MAPPING_FILENAME_2: "headlines-mapping.json"
+  HEADLINES_MAPPING_FILENAME_2: "headlines-mapping.json",
+  DATE_PARSE_REGEXP: /^(\d{1,4})-(\d{1,4})-(\d{1,4})$/
 });

@@ -11,8 +11,9 @@ const {
   VCARD_INCLUDED_FIELDS,
   PREFIX,
   POSTFIX,
-  VCARD_HEADLINES_MAPPING_2,
-  HEADLINES_MAPPING_FILENAME_2
+  VCARD_HEADLINES_MAPPING,
+  HEADLINES_MAPPING_FILENAME_2,
+  DATE_PARSE_REGEXP
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -49,7 +50,7 @@ function loadHeadlinesMappingFile() {
       `There are no headlines mapping file "${headlinesMappingFilePath}"! Will used default mapping.`
     );
 
-    return VCARD_HEADLINES_MAPPING_2;
+    return VCARD_HEADLINES_MAPPING;
   } else {
     try {
       const file = fs.readFileSync(
@@ -60,7 +61,7 @@ function loadHeadlinesMappingFile() {
       return JSON.parse(file);
     } catch (error) {
       console.error(error);
-      return VCARD_HEADLINES_MAPPING_2;
+      return VCARD_HEADLINES_MAPPING;
     }
   }
 }
@@ -77,7 +78,7 @@ function loadAllFilesInDir(dir) {
       } else {
         let objects = [];
         if (!fileNames || fileNames.length === 0) {
-          console.error("There are no files in directory!");
+          console.error(`There are no files in directory: "${dir}"!`);
           return null;
         }
         fileNames.forEach(fileName => {
@@ -95,11 +96,12 @@ function loadAllFilesInDir(dir) {
               content: new Buffer(csv)
             });
           } else {
+            const parh = outputFileLocation(OUTPUT_FILENAME);
             writeToFile({
-              outputFileLocation: outputFileLocation(OUTPUT_FILENAME),
+              outputFileLocation: parh,
               file: csv
             });
-            console.log("Results successfully writen in the file");
+            console.log(`Results successfully written in the file ${parh}`);
           }
         } else {
           console.error("There are no .vcf files!");
@@ -182,7 +184,7 @@ function parseMeta(meta = {}) {
 
 function parseData(string) {
   try {
-    if (string.match(/([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/)) {
+    if (string.match(DATE_PARSE_REGEXP)) {
       return moment(string).format("DD/MM/YYYY");
     }
     return string;
@@ -257,10 +259,15 @@ function uploadToDropbox(file) {
       contents: file.content
     })
     .then(function(response) {
-      console.log(`File "${uploadingPath}" is successfully uploaded!`);
+      console.log(
+        `File "${uploadingPath}" is successfully uploaded to DropBox!`
+      );
     })
     .catch(function(err) {
-      console.log(`File "${uploadingPath}"uploading exception:`, err);
+      console.log(
+        `File "${uploadingPath}" uploading to DropBox exception:`,
+        err
+      );
     });
 }
 
