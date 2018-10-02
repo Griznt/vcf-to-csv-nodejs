@@ -1,20 +1,5 @@
 module.exports = Object.freeze({
-  VCARD_INCLUDED_FIELDS: [
-    "X-GENDER",
-    "N",
-    "TITLE",
-    "ORG",
-    "ADR",
-    "TEL",
-    "EMAIL",
-    "X-SOCIALPROFILE",
-    "BDAY",
-    "PHOTO",
-    "URL",
-    "NICKNAME",
-    "IMPP"
-  ],
-  VCARD_HEADLINES_MAPPING_2: [
+  VCARD_HEADLINES_MAPPING: [
     { "X-GENDER": "Geschlecht" },
     { "N:2": "Vorname" },
     { "N:3": "Mittelname" },
@@ -50,5 +35,8 @@ module.exports = Object.freeze({
   PREFIX: "BEGIN:VCARD",
   POSTFIX: "END:VCARD",
   HEADLINES_MAPPING_FILENAME_2: "headlines-mapping.json",
-  DATE_PARSE_REGEXP: /^(\d{1,4})-(\d{1,4})-(\d{1,4})$/
+  DATE_PARSE_REGEXP: /^(\d{1,4})-(\d{1,4})-(\d{1,4})$/,
+  DATE_FORMAT: "MM/DD/YYYY",
+  ADDITIONAL_PARSING_RULES: { CONCAT: "CONCAT" },
+  ADDITIONAL_PARSING_CONDITIONS: [{ CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }] }]
 });

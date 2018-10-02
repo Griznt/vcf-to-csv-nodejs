@@ -8,12 +8,14 @@ const moment = require("moment");
 require("isomorphic-fetch");
 
 const {
-  VCARD_INCLUDED_FIELDS,
   PREFIX,
   POSTFIX,
   VCARD_HEADLINES_MAPPING,
   HEADLINES_MAPPING_FILENAME_2,
-  DATE_PARSE_REGEXP
+  DATE_PARSE_REGEXP,
+  DATE_FORMAT,
+  ADDITIONAL_PARSING_RULES,
+  ADDITIONAL_PARSING_CONDITIONS
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -128,42 +130,72 @@ function parseVCardToCsv(vcard) {
     .filter(item => item.includes(PREFIX))
     .map(item => (item += `\r\n${POSTFIX}`));
 
-  const allPossibleHeaders = [];
-
   const result = [];
 
   vcardsArray.map(item => {
     const card = vCard.parse(item);
     const resultObject = {};
 
-    Object.keys(card)
-      .filter(key => VCARD_INCLUDED_FIELDS.includes(key.toUpperCase()))
-      .map(key => {
-        const value = card[key];
-        value.forEach((item, i) => {
-          const meta = parseMeta(item.meta);
-          let k, v;
-          if (item.value instanceof Array) {
-            item.value.forEach((innerItem, j) => {
-              k = parseKey({
-                key,
-                i: j,
-                meta: null,
-                value: innerItem
-              });
-              v = parseData(innerItem);
-              resultObject[k] = v;
+    Object.keys(card).map(key => {
+      const value = card[key];
+      value.forEach((item, i) => {
+        const meta = parseMeta(item.meta);
+        let k, v;
+        if (item.value instanceof Array) {
+          item.value.forEach((innerItem, j) => {
+            k = parseKey({
+              key,
+              i: j,
+              meta: null,
+              value: innerItem
             });
-          } else {
-            k = parseKey({ key, i, meta, value });
-            v = parseData(item.value.toString());
-            if (!resultObject[k]) resultObject[k] = v;
-          }
-        });
+            v = parseData(innerItem);
+            resultObject[k] = v;
+          });
+        } else {
+          k = parseKey({ key, i, meta, value });
+          v = parseData(item.value.toString());
+          if (!resultObject[k]) resultObject[k] = v;
+        }
       });
+    });
+
     result.push(resultObject);
   });
   return mergeResultObjects(result);
+}
+
+function additionalParsing(resultObject) {
+  try {
+    ADDITIONAL_PARSING_CONDITIONS.forEach(rule => {
+      switch (getObjectkey(rule)) {
+        case ADDITIONAL_PARSING_RULES.CONCAT:
+          rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
+            const key = getObjectkey(concatRule);
+            const value = concatRule[key];
+            value.filter(v => !!resultObject[v]).forEach(v => {
+              resultObject[key] += `\r\n${resultObject[v]}`;
+              delete resultObject[v];
+            });
+          });
+          break;
+        default:
+          return;
+      }
+    });
+  } catch (error) {
+    console.error("There additional parsing error", error);
+    return resultObject;
+  }
+}
+
+function getObjectkey(object) {
+  try {
+    return Object.keys(object)[0];
+  } catch (error) {
+    console.error("Error in get object key function", error);
+    return object;
+  }
 }
 
 function parseKey({ key, i, meta, value }) {
@@ -184,8 +216,9 @@ function parseMeta(meta = {}) {
 
 function parseData(string) {
   try {
+    const dateFormat = process.env.DATE_FORMAT || DATE_FORMAT;
     if (string.match(DATE_PARSE_REGEXP)) {
-      return moment(string).format("DD/MM/YYYY");
+      return moment(string).format(dateFormat);
     }
     return string;
   } catch (error) {
