@@ -72,7 +72,10 @@ exports.uploadTo = settings => {
     };
 
     s3.upload(params, (err, data) => {
-      if (err) reject(err);
+      if (err) {
+        reject(err);
+        return;
+      }
       resolve(
         "File successfully loaded to S3 Bucket! " + data ? data.Location : ""
       );
