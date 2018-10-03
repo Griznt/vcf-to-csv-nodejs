@@ -59,6 +59,6 @@ You need to specify AWS S3 Bucket in event:
 
 #### output csv file
 
-if `UPLOAD_TO_DROPBOX=true`, output will be uploaded to DropBox
-else output will be uploaded to AWS S3 Bucket.
-**It's required to ad ACCESS key in Enviroment Variables (env)**
+- if `UPLOAD_TO_DROPBOX=true`, output will be uploaded to DropBox
+- else output will be uploaded to AWS S3 Bucket.
+  **It's required to add ACCESS key in Enviroment Variables (env)**
