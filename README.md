@@ -13,7 +13,8 @@ You may specify following settings:
 - output file location to save
 - upload to DropBox
 - upload to AWS S3 Bucket
-- load source file from AWS S3 Bucket
+- specify AWS S3 Bucket with source files
+- specify AWS s3 Bucket for uploaded results
 
 ### installation
 
@@ -53,6 +54,9 @@ You need to specify AWS S3 Bucket in event:
 ```
     //All .vcf files from this Bucket will be uploaded and parsed
     Bucket: 'Your Bucket name',
+    //Option value. If specified, output file will be saved to BucketUpload,
+    //if no, the output will be uploaded to Bucket.
+    BucketUpload: 'Your other Bucket', 
     //Also, you may specify other params, for example:
     ACL: "public-read"
 ```
