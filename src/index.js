@@ -42,9 +42,7 @@ const allHeaders = HEADLINES_MAPPING.map(item => Object.keys(item)[0]);
 const UPLOAD_TO_DROPBOX = process.env.UPLOAD_TO_DROPBOX === "true";
 
 const OUTPUT_FILENAME = `${process.env.OUTPUT_FILENAME ||
-  new Date().getTime()}.csv`;
-
-loadAllFilesInDir(inputDir);
+  Math.floor(new Date() / 1000)}.csv`;
 
 function loadHeadlinesMappingFile() {
   if (!fs.existsSync(headlinesMappingFilePath)) {
@@ -55,10 +53,7 @@ function loadHeadlinesMappingFile() {
     return VCARD_HEADLINES_MAPPING;
   } else {
     try {
-      const file = fs.readFileSync(
-        path.join(headlinesMappingFilePath),
-        "utf-8"
-      );
+      const file = fs.readFileSync(path.join(headlinesMappingFilePath), "utf8");
 
       return JSON.parse(file);
     } catch (error) {
@@ -68,52 +63,109 @@ function loadHeadlinesMappingFile() {
   }
 }
 
-function loadAllFilesInDir(dir) {
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
-    }
-    fs.readdir(dir, function(err, fileNames) {
-      if (err) {
-        console.error(err);
-        return {};
-      } else {
-        let objects = [];
-        if (!fileNames || fileNames.length === 0) {
-          console.error(`There are no files in directory: "${dir}"!`);
-          return null;
-        }
-        fileNames.forEach(fileName => {
-          if (fileName.includes(".vcf")) {
-            const vcard = fs.readFileSync(path.join(dir, fileName), "utf-8");
-            objects = objects.concat(objects, parseVCardToCsv(vcard));
-          }
-        });
-        if (objects.length != 0) {
-          const csv = saveToCSV(mergeResultObjects(objects, true));
+function loadFiles(dir, params) {
+  return new Promise((resolve, reject) => {
+    const { isInLambda, aws_params } = params || {};
+    let objects = [];
 
-          if (UPLOAD_TO_DROPBOX) {
-            uploadToDropbox({
-              name: OUTPUT_FILENAME,
-              content: new Buffer(csv)
-            });
-          } else {
-            const parh = outputFileLocation(OUTPUT_FILENAME);
-            writeToFile({
-              outputFileLocation: parh,
-              file: csv
-            });
-            console.log(`Results successfully written in the file ${parh}`);
-          }
-          return csv;
+    if (isInLambda) {
+      require("./aws-services/s3service")
+        .uploadFrom(aws_params)
+        .then(results => {
+          results.forEach(vcard => {
+            objects = objects.concat(objects, parseVCardToCsv(vcard));
+          });
+          resolve(objects);
+        })
+        .catch(error => {
+          logResponse({ params, success: false, message: error });
+          reject(error);
+        });
+    } else {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir);
+      }
+      fs.readdir(dir, function(error, fileNames) {
+        if (error) {
+          console.error(error);
+          reject(error);
+          return {};
         } else {
-          console.error("There are no .vcf files!");
-          return null;
+          if (!fileNames || fileNames.length === 0) {
+            const message = `There are no files in directory: "${dir}"!`;
+            console.error(message);
+            reject(message);
+            return null;
+          }
+          fileNames.forEach(fileName => {
+            if (fileName.includes(".vcf")) {
+              const vcard = fs.readFileSync(path.join(dir, fileName), "utf8");
+              objects = objects.concat(objects, parseVCardToCsv(vcard));
+            }
+          });
+          resolve(objects);
+        }
+      });
+    }
+  });
+}
+
+async function loadAllFilesInDir(dir, params) {
+  const { isInLambda, callback, aws_params } = params || {};
+  try {
+    let objects = [];
+    await loadFiles(dir, params)
+      .then(_objects => {
+        objects = _objects;
+      })
+      .catch(err => logResponse({ params, success: false, message: err }));
+
+    if (objects.length != 0) {
+      const csv = saveToCSV(mergeResultObjects(objects, true));
+
+      if (UPLOAD_TO_DROPBOX) {
+        uploadToDropbox(
+          {
+            name: OUTPUT_FILENAME,
+            content: new Buffer(csv, "utf8")
+          },
+          params
+        );
+      } else if (!isInLambda) {
+        const path = outputFileLocation(OUTPUT_FILENAME);
+        writeToFile({
+          outputFileLocation: path,
+          file: csv
+        });
+        console.log(`Results successfully written in the file ${path}`);
+      } else {
+        if (isInLambda) {
+          require("./aws-services/s3service")
+            .uploadTo({ ...aws_params, csv })
+            .then(result =>
+              logResponse({
+                params,
+                success: true,
+                message: "Parsing success: " + result.toString()
+              })
+            )
+            .catch(error =>
+              logResponse({
+                params,
+                success: false,
+                message: error
+              })
+            );
         }
       }
-    });
+      return csv;
+    } else {
+      const message = "There are no .vcf files!";
+      logResponse({ params, success: false, message });
+      return null;
+    }
   } catch (error) {
-    console.error(error);
+    logResponse({ params, success: false, message: error });
     return null;
   }
 }
@@ -125,7 +177,7 @@ function outputFileLocation(filename) {
   return path.join(outputDir, filename);
 }
 
-function parseVCardToCsv(vcard) {
+function parseVCardToCsv(vcard, params = {}) {
   const vcardsArray = vcard
     .split(new RegExp(POSTFIX, "g"))
     .filter(item => item.includes(PREFIX))
@@ -135,7 +187,7 @@ function parseVCardToCsv(vcard) {
 
   vcardsArray.map(item => {
     const card = vCard.parse(item);
-    const resultObject = {};
+    let resultObject = {};
 
     Object.keys(card).map(key => {
       const value = card[key];
@@ -161,33 +213,32 @@ function parseVCardToCsv(vcard) {
       });
     });
 
+    try {
+      ADDITIONAL_PARSING_CONDITIONS.forEach(rule => {
+        switch (getObjectkey(rule)) {
+          case ADDITIONAL_PARSING_RULES.CONCAT:
+            rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
+              const key = getObjectkey(concatRule);
+              const value = concatRule[key];
+              value.filter(v => !!resultObject[v]).forEach(v => {
+                resultObject[key] += `\r\n${resultObject[v]}`;
+                delete resultObject[v];
+              });
+            });
+            break;
+          default:
+            break;
+        }
+      });
+    } catch (error) {
+      const message =
+        "There are error in additional parsing function" + error.toString();
+      logResponse({ params, success: false, message });
+      return resultObject;
+    }
     result.push(resultObject);
   });
   return mergeResultObjects(result);
-}
-
-function additionalParsing(resultObject) {
-  try {
-    ADDITIONAL_PARSING_CONDITIONS.forEach(rule => {
-      switch (getObjectkey(rule)) {
-        case ADDITIONAL_PARSING_RULES.CONCAT:
-          rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
-            const key = getObjectkey(concatRule);
-            const value = concatRule[key];
-            value.filter(v => !!resultObject[v]).forEach(v => {
-              resultObject[key] += `\r\n${resultObject[v]}`;
-              delete resultObject[v];
-            });
-          });
-          break;
-        default:
-          return;
-      }
-    });
-  } catch (error) {
-    console.error("There additional parsing error", error);
-    return resultObject;
-  }
 }
 
 function getObjectkey(object) {
@@ -224,7 +275,7 @@ function parseData(string) {
     return string;
   } catch (error) {
     console.error("Date parsing error: ", error);
-    return date;
+    return string;
   }
 }
 
@@ -233,6 +284,7 @@ function saveToCSV(arrayofObjects) {
     const fields = Object.keys(arrayofObjects[0]);
     const parser = new Json2csvParser({ fields });
     const csvFile = parser.parse(arrayofObjects);
+
     return csvFile;
   } catch (err) {
     console.error(err);
@@ -276,7 +328,7 @@ function mapVcardColumnToHeadline(header) {
   }
 }
 
-function uploadToDropbox(file) {
+function uploadToDropbox(file, params) {
   const Dropbox = require("dropbox").Dropbox;
   const DBX_ACCESS_TOKEN = process.env.DBX_ACCESS_TOKEN;
   const DBX_UPLOAD_SUB_FOLDER = process.env.DBX_UPLOAD_SUB_FOLDER;
@@ -293,24 +345,41 @@ function uploadToDropbox(file) {
       contents: file.content
     })
     .then(function(response) {
-      console.log(
-        `File "${uploadingPath}" is successfully uploaded to DropBox!`
-      );
+      const message = `File "${uploadingPath}" is successfully uploaded to DropBox!`;
+      logResponse({
+        params,
+        success: true,
+        message
+      });
     })
     .catch(function(err) {
-      console.log(
-        `File "${uploadingPath}" uploading to DropBox exception:`,
-        err
-      );
+      const message =
+        `File "${uploadingPath}" upload to DropBox error:` + err.toString();
+      logResponse({
+        params,
+        success: false,
+        message
+      });
     });
 }
 
-exports.start = async function(callback) {
-  const isInLambda = !!process.env.LAMBDA_TASK_ROOT;
-  const result = await loadAllFilesInDir(inputDir);
+function logResponse({ params, success, message }) {
+  const { isInLambda, callback } = params;
+  if (isInLambda) {
+    lambdaCallback({ success, message, callback });
+  } else success ? console.log(message) : console.error(message);
+}
 
-  if (isInLambda)
-    if (!!result) callback(null, "Parsing successfylly finished!");
-    else callback("parsing finishing with errors!");
+function lambdaCallback({ success, message, callback }) {
+  if (success) callback(null, message);
+  else callback(message);
+}
+
+exports.start = async function({ isInLambda, callback, aws_params }) {
+  const result = await loadAllFilesInDir(inputDir, {
+    isInLambda,
+    callback,
+    aws_params
+  });
   return !!result;
 };
