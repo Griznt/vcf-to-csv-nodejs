@@ -7,42 +7,43 @@ exports.uploadFrom = ({ Bucket, Key }) => {
 
   var params = { Bucket, Key };
   return new Promise((resolve, reject) => {
-    s3.getObject(params, function (err, data) {
-      if (err) {
+    s3.getObject(params, function(err, data) {
+      if (err || !data) {
         console.error(err);
         reject(err);
       }
 
-
-      resolve(new Buffer(data.Body, 'base64').toString('base64'));
+      if (data)
+        resolve(new Buffer(data.Body, data.ContentType).toString("utf8"));
+      else reject("There are problem with fetching date from S3 bucket!");
     });
   });
 };
 
-exports.uploadTo = ({ Bucket, Key, csv }) => {
+exports.uploadTo = settings => {
+  const { Bucket, Key, csv } = settings;
+  delete settings.Bucket;
+  delete settings.Key;
+  delete settings.csv;
   const s3 = new aws.S3({
     apiVersion: "2006-03-01"
   });
 
   return new Promise((resolve, reject) => {
-    const fileBuffer = new Buffer(csv, 'base64');
+    const fileBuffer = new Buffer(csv);
     const fileName = `${Math.floor(new Date() / 1000)}.csv`;
+
     const params = {
+      ...settings,
       Body: fileBuffer,
       Key: fileName,
       Bucket,
-      ContentEncoding: 'base64',
-      ContentType: 'text/csv'
+      ContentType: "text/csv"
     };
-    console.log({ params });
-    s3.putObject(params, (err, data) => {
+
+    s3.upload(params, (err, data) => {
       if (err) reject(err);
-      resolve('File successfully loaded to S3 Bucket!')
+      resolve("File successfully loaded to S3 Bucket! " + data.Location);
     });
-  })
-
-
-
-
-
+  });
 };

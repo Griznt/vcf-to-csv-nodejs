@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
@@ -43,8 +42,7 @@ const allHeaders = HEADLINES_MAPPING.map(item => Object.keys(item)[0]);
 const UPLOAD_TO_DROPBOX = process.env.UPLOAD_TO_DROPBOX === "true";
 
 const OUTPUT_FILENAME = `${process.env.OUTPUT_FILENAME ||
-  new Date().getTime()}.csv`;
-
+  Math.floor(new Date() / 1000)}.csv`;
 
 function loadHeadlinesMappingFile() {
   if (!fs.existsSync(headlinesMappingFilePath)) {
@@ -70,26 +68,24 @@ function loadHeadlinesMappingFile() {
 
 function loadFiles(dir, params) {
   return new Promise((resolve, reject) => {
-
     const { isInLambda, callback, aws_params } = params || {};
 
     if (isInLambda) {
       require("./aws-services/s3service")
         .uploadFrom(aws_params)
         .then(result => {
-          console.log(result)
-          resolve(parseVCardToCsv(result))
-        }
-        )
-        .catch(error => { console.log(error); callback(error); reject(error) });
-
-    }
-    else {
+          resolve(parseVCardToCsv(result));
+        })
+        .catch(error => {
+          callback(error);
+          reject(error);
+        });
+    } else {
       let objects = [];
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
       }
-      fs.readdir(dir, function (err, fileNames) {
+      fs.readdir(dir, function(err, fileNames) {
         if (err) {
           console.error(err);
           reject(error);
@@ -99,7 +95,6 @@ function loadFiles(dir, params) {
             console.error(`There are no files in directory: "${dir}"!`);
             reject(error);
             return null;
-
           }
           fileNames.forEach(fileName => {
             if (fileName.includes(".vcf")) {
@@ -108,22 +103,22 @@ function loadFiles(dir, params) {
             }
           });
           resolve(objects);
-
         }
       });
     }
-
-  })
+  });
 }
 
 async function loadAllFilesInDir(dir, params) {
   const { isInLambda, callback, aws_params } = params || {};
   try {
-
     let objects = [];
     await loadFiles(dir, params)
-      .then(_objects => { console.log(_objects); objects = _objects })
+      .then(_objects => {
+        objects = _objects;
+      })
       .catch(err => console.error(err));
+
     if (objects.length != 0) {
       const csv = saveToCSV(mergeResultObjects(objects, true));
 
@@ -132,9 +127,9 @@ async function loadAllFilesInDir(dir, params) {
           name: OUTPUT_FILENAME,
           content: new Buffer(csv)
         });
-        console.log('File uploaded to DropBox');
+        console.log(`File ${OUTPUT_FILENAME} uploaded to DropBox`);
         if (isInLambda)
-          callback(null, 'File uploaded to DropBox');
+          callback(null, `File ${OUTPUT_FILENAME} uploaded to DropBox`);
       } else if (!isInLambda) {
         const path = outputFileLocation(OUTPUT_FILENAME);
         writeToFile({
@@ -144,10 +139,12 @@ async function loadAllFilesInDir(dir, params) {
         console.log(`Results successfully written in the file ${path}`);
       } else {
         if (isInLambda) {
-          require('./aws-services/s3service')
+          require("./aws-services/s3service")
             .uploadTo({ ...aws_params, csv })
-            .then(result => callback(null, 'File uploaded to AWS S3 Bucket'))
-            .catch(error => callback('saving file to S3 bucket error:' + error));
+            .then(result => callback(null, result))
+            .catch(error =>
+              callback("saving file to S3 bucket error:" + error)
+            );
         }
       }
       return csv;
@@ -155,7 +152,6 @@ async function loadAllFilesInDir(dir, params) {
       console.error("There are no .vcf files!");
       return null;
     }
-
   } catch (error) {
     console.error(error);
     return null;
@@ -282,7 +278,7 @@ function saveToCSV(arrayofObjects) {
 }
 
 function writeToFile({ outputFileLocation, file }) {
-  fs.writeFileSync(outputFileLocation, file, function (err) {
+  fs.writeFileSync(outputFileLocation, file, function(err) {
     if (err) {
       return console.error(err);
     }
@@ -324,7 +320,7 @@ function uploadToDropbox(file) {
 
   const uploadingPath = `/${
     DBX_UPLOAD_SUB_FOLDER ? `${DBX_UPLOAD_SUB_FOLDER}/` : ""
-    }${file.name}`;
+  }${file.name}`;
 
   const dbx = new Dropbox({ accessToken: DBX_ACCESS_TOKEN });
 
@@ -333,25 +329,22 @@ function uploadToDropbox(file) {
       path: uploadingPath,
       contents: file.content
     })
-    .then(function (response) {
+    .then(function(response) {
       console.log(
-        `File "${uploadingPath}" is successfully uploaded to DropBox!`
+        `File "${uploadingPath}" is successfully uploaded to DropBox!`,
+        { response }
       );
     })
-    .catch(function (err) {
-      console.log(
-        `File "${uploadingPath}" uploading to DropBox exception:`,
-        err
-      );
+    .catch(function(err) {
+      console.log(`File "${uploadingPath}" upload to DropBox error:`, err);
     });
 }
 
-exports.start = async function ({ isInLambda, callback, aws_params }) {
-  console.log('INT OFUNCTION START', { isInLambda, callback, aws_params });
-  const result = await loadAllFilesInDir(inputDir, { isInLambda, callback, aws_params });
-
-  // if (isInLambda)
-  //   if (!!result) callback(null, "Parsing successfylly finished!");
-  //   else callback("parsing finishing with errors!");
+exports.start = async function({ isInLambda, callback, aws_params }) {
+  const result = await loadAllFilesInDir(inputDir, {
+    isInLambda,
+    callback,
+    aws_params
+  });
   return !!result;
 };
