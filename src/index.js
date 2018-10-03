@@ -68,16 +68,16 @@ function loadHeadlinesMappingFile() {
 
 function loadFiles(dir, params) {
   return new Promise((resolve, reject) => {
-    const { isInLambda, callback, aws_params } = params || {};
+    const { isInLambda, aws_params } = params || {};
 
     if (isInLambda) {
       require("./aws-services/s3service")
         .uploadFrom(aws_params)
         .then(result => {
-          resolve(parseVCardToCsv(result));
+          resolve(parseVCardToCsv(result, params));
         })
         .catch(error => {
-          lambdaCallback({ isInLambda, success: false, message: error });
+          lambdaCallback({ params, success: false, message: error });
           reject(error);
         });
     } else {
@@ -119,7 +119,7 @@ async function loadAllFilesInDir(dir, params) {
       })
       .catch(err => {
         console.error(err);
-        lambdaCallback({ isInLambda, success: false, message: err });
+        lambdaCallback({ params, success: false, message: err });
       });
 
     if (objects.length != 0) {
@@ -134,7 +134,7 @@ async function loadAllFilesInDir(dir, params) {
         console.log(message);
         if (isInLambda)
           lambdaCallback({
-            isInLambda,
+            params,
             success: true,
             message
           });
@@ -151,14 +151,14 @@ async function loadAllFilesInDir(dir, params) {
             .uploadTo({ ...aws_params, csv })
             .then(result =>
               lambdaCallback({
-                isInLambda,
+                params,
                 success: true,
                 message: "Parsing finished successfull" + result.toString()
               })
             )
             .catch(error =>
               lambdaCallback({
-                isInLambda,
+                params,
                 success: false,
                 message: error
               })
@@ -169,12 +169,12 @@ async function loadAllFilesInDir(dir, params) {
     } else {
       const message = "There are no .vcf files!";
       console.error(message);
-      lambdaCallback({ isInLambda, success: false, message });
+      lambdaCallback({ params, success: false, message });
       return null;
     }
   } catch (error) {
     console.error(error);
-    lambdaCallback({ isInLambda, success: false, message: error });
+    lambdaCallback({ params, success: false, message: error });
     return null;
   }
 }
@@ -186,7 +186,7 @@ function outputFileLocation(filename) {
   return path.join(outputDir, filename);
 }
 
-function parseVCardToCsv(vcard) {
+function parseVCardToCsv(vcard, params = {}) {
   const vcardsArray = vcard
     .split(new RegExp(POSTFIX, "g"))
     .filter(item => item.includes(PREFIX))
@@ -242,7 +242,7 @@ function parseVCardToCsv(vcard) {
     } catch (error) {
       const message = "There additional parsing error" + error.toString();
       console.error(message);
-      lambdaCallback({ isInLambda, success: false, message });
+      lambdaCallback({ params, success: false, message });
       return resultObject;
     }
     result.push(resultObject);
@@ -364,7 +364,8 @@ function uploadToDropbox(file) {
     });
 }
 
-function lambdaCallback({ isInLambda, success, message }) {
+function lambdaCallback({ params, success, message }) {
+  const { isInLambda, callback } = params;
   if (isInLambda) {
     if (success) callback(null, message);
     else callback(message);

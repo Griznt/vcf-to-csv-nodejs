@@ -10,12 +10,16 @@ exports.uploadFrom = ({ Bucket, Key }) => {
     s3.getObject(params, function(err, data) {
       if (err || !data) {
         console.error(err);
-        reject(err);
+        reject(
+          "There are problem with fetching data from S3 bucket!" +
+            err.toString()
+        );
       }
 
       if (data)
         resolve(new Buffer(data.Body, data.ContentType).toString("utf8"));
-      else reject("There are problem with fetching date from S3 bucket!");
+      else
+        reject("There are problem with fetching data from S3 bucket!" + data);
     });
   });
 };
