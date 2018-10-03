@@ -13,7 +13,7 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
     s3.listObjectsV2(params, function(err, data) {
       if (err || !data) {
         reject(
-          "There are problem with fetching data from S3 bucket!" +
+          "There are problem with fetching Objects list from S3 bucket!" +
             err.toString()
         );
       } else {
@@ -25,7 +25,10 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
             .catch(console.error);
           if (i + 1 === data.Contents.length) {
             if (results.length > 0) resolve(results);
-            else reject(`There are no data fetching from S3 Bucket! ${Bucket}`);
+            else
+              reject(
+                `There are no .vcf files fetching from S3 Bucket! ${Bucket}`
+              );
           }
         });
       }
@@ -70,7 +73,9 @@ exports.uploadTo = settings => {
 
     s3.upload(params, (err, data) => {
       if (err) reject(err);
-      resolve("File successfully loaded to S3 Bucket! " + data.Location);
+      resolve(
+        "File successfully loaded to S3 Bucket! " + data ? data.Location : ""
+      );
     });
   });
 };
