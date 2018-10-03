@@ -77,7 +77,7 @@ function loadFiles(dir, params) {
           resolve(parseVCardToCsv(result, params));
         })
         .catch(error => {
-          lambdaCallback({ params, success: false, message: error });
+          logResponse({ params, success: false, message: error });
           reject(error);
         });
     } else {
@@ -85,15 +85,16 @@ function loadFiles(dir, params) {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
       }
-      fs.readdir(dir, function(err, fileNames) {
-        if (err) {
-          console.error(err);
+      fs.readdir(dir, function(error, fileNames) {
+        if (error) {
+          console.error(error);
           reject(error);
           return {};
         } else {
           if (!fileNames || fileNames.length === 0) {
-            console.error(`There are no files in directory: "${dir}"!`);
-            reject(error);
+            const message = `There are no files in directory: "${dir}"!`;
+            console.error(message);
+            reject(message);
             return null;
           }
           fileNames.forEach(fileName => {
@@ -117,27 +118,19 @@ async function loadAllFilesInDir(dir, params) {
       .then(_objects => {
         objects = _objects;
       })
-      .catch(err => {
-        console.error(err);
-        lambdaCallback({ params, success: false, message: err });
-      });
+      .catch(err => logResponse({ params, success: false, message: err }));
 
     if (objects.length != 0) {
       const csv = saveToCSV(mergeResultObjects(objects, true));
 
       if (UPLOAD_TO_DROPBOX) {
-        uploadToDropbox({
-          name: OUTPUT_FILENAME,
-          content: new Buffer(csv)
-        });
-        const message = `File ${OUTPUT_FILENAME} uploaded to DropBox`;
-        console.log(message);
-        if (isInLambda)
-          lambdaCallback({
-            params,
-            success: true,
-            message
-          });
+        uploadToDropbox(
+          {
+            name: OUTPUT_FILENAME,
+            content: new Buffer(csv)
+          },
+          params
+        );
       } else if (!isInLambda) {
         const path = outputFileLocation(OUTPUT_FILENAME);
         writeToFile({
@@ -150,14 +143,14 @@ async function loadAllFilesInDir(dir, params) {
           require("./aws-services/s3service")
             .uploadTo({ ...aws_params, csv })
             .then(result =>
-              lambdaCallback({
+              logResponse({
                 params,
                 success: true,
                 message: "Parsing finished successfull" + result.toString()
               })
             )
             .catch(error =>
-              lambdaCallback({
+              logResponse({
                 params,
                 success: false,
                 message: error
@@ -168,13 +161,11 @@ async function loadAllFilesInDir(dir, params) {
       return csv;
     } else {
       const message = "There are no .vcf files!";
-      console.error(message);
-      lambdaCallback({ params, success: false, message });
+      logResponse({ params, success: false, message });
       return null;
     }
   } catch (error) {
-    console.error(error);
-    lambdaCallback({ params, success: false, message: error });
+    logResponse({ params, success: false, message: error });
     return null;
   }
 }
@@ -241,8 +232,7 @@ function parseVCardToCsv(vcard, params = {}) {
       });
     } catch (error) {
       const message = "There additional parsing error" + error.toString();
-      console.error(message);
-      lambdaCallback({ params, success: false, message });
+      logResponse({ params, success: false, message });
       return resultObject;
     }
     result.push(resultObject);
@@ -337,7 +327,7 @@ function mapVcardColumnToHeadline(header) {
   }
 }
 
-function uploadToDropbox(file) {
+function uploadToDropbox(file, params) {
   const Dropbox = require("dropbox").Dropbox;
   const DBX_ACCESS_TOKEN = process.env.DBX_ACCESS_TOKEN;
   const DBX_UPLOAD_SUB_FOLDER = process.env.DBX_UPLOAD_SUB_FOLDER;
@@ -354,22 +344,34 @@ function uploadToDropbox(file) {
       contents: file.content
     })
     .then(function(response) {
-      console.log(
-        `File "${uploadingPath}" is successfully uploaded to DropBox!`,
-        { response }
-      );
+      const message = `File "${uploadingPath}" is successfully uploaded to DropBox!`;
+      logResponse({
+        params,
+        success: true,
+        message
+      });
     })
     .catch(function(err) {
-      console.log(`File "${uploadingPath}" upload to DropBox error:`, err);
+      const message =
+        `File "${uploadingPath}" upload to DropBox error:` + err.toString();
+      logResponse({
+        params,
+        success: false,
+        message
+      });
     });
 }
 
-function lambdaCallback({ params, success, message }) {
+function logResponse({ params, success, message }) {
   const { isInLambda, callback } = params;
   if (isInLambda) {
-    if (success) callback(null, message);
-    else callback(message);
-  }
+    lambdaCallback(success, message, callback);
+  } else success ? console.log(message) : console.error(message);
+}
+
+function lambdaCallback({ success, message, callback }) {
+  if (success) callback(null, message);
+  else callback(message);
 }
 
 exports.start = async function({ isInLambda, callback, aws_params }) {
