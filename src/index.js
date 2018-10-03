@@ -77,7 +77,7 @@ function loadFiles(dir, params) {
           resolve(parseVCardToCsv(result));
         })
         .catch(error => {
-          callback(error);
+          lambdaCallback({ isInLambda, success: false, message: error });
           reject(error);
         });
     } else {
@@ -117,7 +117,10 @@ async function loadAllFilesInDir(dir, params) {
       .then(_objects => {
         objects = _objects;
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        lambdaCallback({ isInLambda, success: false, message: err });
+      });
 
     if (objects.length != 0) {
       const csv = saveToCSV(mergeResultObjects(objects, true));
@@ -127,9 +130,14 @@ async function loadAllFilesInDir(dir, params) {
           name: OUTPUT_FILENAME,
           content: new Buffer(csv)
         });
-        console.log(`File ${OUTPUT_FILENAME} uploaded to DropBox`);
+        const message = `File ${OUTPUT_FILENAME} uploaded to DropBox`;
+        console.log(message);
         if (isInLambda)
-          callback(null, `File ${OUTPUT_FILENAME} uploaded to DropBox`);
+          lambdaCallback({
+            isInLambda,
+            success: true,
+            message
+          });
       } else if (!isInLambda) {
         const path = outputFileLocation(OUTPUT_FILENAME);
         writeToFile({
@@ -141,19 +149,32 @@ async function loadAllFilesInDir(dir, params) {
         if (isInLambda) {
           require("./aws-services/s3service")
             .uploadTo({ ...aws_params, csv })
-            .then(result => callback(null, result))
+            .then(result =>
+              lambdaCallback({
+                isInLambda,
+                success: true,
+                message: "Parsing finished successfull" + result.toString()
+              })
+            )
             .catch(error =>
-              callback("saving file to S3 bucket error:" + error)
+              lambdaCallback({
+                isInLambda,
+                success: false,
+                message: error
+              })
             );
         }
       }
       return csv;
     } else {
-      console.error("There are no .vcf files!");
+      const message = "There are no .vcf files!";
+      console.error(message);
+      lambdaCallback({ isInLambda, success: false, message });
       return null;
     }
   } catch (error) {
     console.error(error);
+    lambdaCallback({ isInLambda, success: false, message: error });
     return null;
   }
 }
@@ -219,7 +240,9 @@ function parseVCardToCsv(vcard) {
         }
       });
     } catch (error) {
-      console.error("There additional parsing error", error);
+      const message = "There additional parsing error" + error.toString();
+      console.error(message);
+      lambdaCallback({ isInLambda, success: false, message });
       return resultObject;
     }
     result.push(resultObject);
@@ -270,6 +293,7 @@ function saveToCSV(arrayofObjects) {
     const fields = Object.keys(arrayofObjects[0]);
     const parser = new Json2csvParser({ fields });
     const csvFile = parser.parse(arrayofObjects);
+
     return csvFile;
   } catch (err) {
     console.error(err);
@@ -338,6 +362,13 @@ function uploadToDropbox(file) {
     .catch(function(err) {
       console.log(`File "${uploadingPath}" upload to DropBox error:`, err);
     });
+}
+
+function lambdaCallback({ isInLambda, success, message }) {
+  if (isInLambda) {
+    if (success) callback(null, message);
+    else callback(message);
+  }
 }
 
 exports.start = async function({ isInLambda, callback, aws_params }) {

@@ -27,7 +27,7 @@ In another case the `.csv` file will be saved in `/output` directory
 
 App can work in lambda function. Entry point is `aws.js`. Also provided `aws.yml`.
 
-##### input file
+#### input vcard file
 
 source file uploads from AWS S3 Bucket.
 You need to specify source file location and params inside AWS S3 Bucket as event:
@@ -38,7 +38,7 @@ You need to specify source file location and params inside AWS S3 Bucket as even
     not_required_additional_params: You can specify needed settings, for example: ACL: "public-read"
 ```
 
-##### output csv file
+#### output csv file
 
 if `UPLOAD_TO_DROPBOX=true`, output will be uploaded to DropBox
 else output will be uploaded to AWS S3 Bucket.
