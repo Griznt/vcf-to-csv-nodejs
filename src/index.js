@@ -231,7 +231,8 @@ function parseVCardToCsv(vcard, params = {}) {
         }
       });
     } catch (error) {
-      const message = "There additional parsing error" + error.toString();
+      const message =
+        "There are error in additional parsing function" + error.toString();
       logResponse({ params, success: false, message });
       return resultObject;
     }
