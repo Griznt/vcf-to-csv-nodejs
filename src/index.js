@@ -53,10 +53,7 @@ function loadHeadlinesMappingFile() {
     return VCARD_HEADLINES_MAPPING;
   } else {
     try {
-      const file = fs.readFileSync(
-        path.join(headlinesMappingFilePath),
-        "utf-8"
-      );
+      const file = fs.readFileSync(path.join(headlinesMappingFilePath), "utf8");
 
       return JSON.parse(file);
     } catch (error) {
@@ -99,7 +96,7 @@ function loadFiles(dir, params) {
           }
           fileNames.forEach(fileName => {
             if (fileName.includes(".vcf")) {
-              const vcard = fs.readFileSync(path.join(dir, fileName), "utf-8");
+              const vcard = fs.readFileSync(path.join(dir, fileName), "utf8");
               objects = objects.concat(objects, parseVCardToCsv(vcard));
             }
           });
@@ -127,7 +124,7 @@ async function loadAllFilesInDir(dir, params) {
         uploadToDropbox(
           {
             name: OUTPUT_FILENAME,
-            content: new Buffer(csv)
+            content: new Buffer(csv, "utf8")
           },
           params
         );
@@ -365,7 +362,7 @@ function uploadToDropbox(file, params) {
 function logResponse({ params, success, message }) {
   const { isInLambda, callback } = params;
   if (isInLambda) {
-    lambdaCallback(success, message, callback);
+    lambdaCallback({ success, message, callback });
   } else success ? console.log(message) : console.error(message);
 }
 
