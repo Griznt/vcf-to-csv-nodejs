@@ -14,7 +14,7 @@ You may specify following settings:
 - upload to DropBox
 - upload to AWS S3 Bucket
 - specify AWS S3 Bucket with source files
-- specify AWS s3 Bucket for uploaded results
+- specify AWS S3 Bucket for uploaded results
 
 ### installation
 
