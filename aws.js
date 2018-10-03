@@ -1,6 +1,6 @@
 const isInLambda = process.env.LAMBDA_TASK_ROOT;
 
-const start = new Date().getTime();
+let start = new Date().getTime();
 const onFinish = end => console.log(
   '\r\n_________________________\r\n\r\n',
   `execution Time is ${(end - start)}`,
@@ -13,6 +13,7 @@ if (!isInLambda) {
 }
 
 module.exports.start = (event, context, callback) => {
+  start = new Date().getTime();
   try {
     if (isInLambda) console.log("Runing under AWS lambda");
     require("./src/index").start({
