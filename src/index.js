@@ -66,19 +66,22 @@ function loadHeadlinesMappingFile() {
 function loadFiles(dir, params) {
   return new Promise((resolve, reject) => {
     const { isInLambda, aws_params } = params || {};
+    let objects = [];
 
     if (isInLambda) {
       require("./aws-services/s3service")
         .uploadFrom(aws_params)
-        .then(result => {
-          resolve(parseVCardToCsv(result, params));
+        .then(results => {
+          results.forEach(vcard => {
+            objects = objects.concat(objects, parseVCardToCsv(vcard));
+          });
+          resolve(objects);
         })
         .catch(error => {
           logResponse({ params, success: false, message: error });
           reject(error);
         });
     } else {
-      let objects = [];
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
       }
@@ -143,7 +146,7 @@ async function loadAllFilesInDir(dir, params) {
               logResponse({
                 params,
                 success: true,
-                message: "Parsing finished successfull" + result.toString()
+                message: "Parsing success: " + result.toString()
               })
             )
             .catch(error =>

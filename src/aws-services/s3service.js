@@ -1,37 +1,60 @@
 const aws = require("aws-sdk");
 
-exports.uploadFrom = ({ Bucket, Key }) => {
-  const s3 = new aws.S3({
-    apiVersion: "2006-03-01"
-  });
+const s3 = new aws.S3({
+  apiVersion: "2006-03-01"
+});
 
-  var params = { Bucket, Key };
+exports.uploadFrom = ({ Bucket, maxKeys }) => {
+  let results = [];
+
   return new Promise((resolve, reject) => {
-    s3.getObject(params, function(err, data) {
+    const params = { Bucket };
+    if (maxKeys) params["maxKeys"] = maxKeys;
+    s3.listObjectsV2(params, function(err, data) {
       if (err || !data) {
-        console.error(err);
         reject(
           "There are problem with fetching data from S3 bucket!" +
             err.toString()
         );
+      } else {
+        data.Contents.forEach(async (object, i) => {
+          const Key = object.Key;
+          if (!Key.includes(".vcf")) return;
+          await uploadObjectFromBucket({ Bucket, Key })
+            .then(result => (results = results.concat(results, result)))
+            .catch(console.error);
+          if (i + 1 === data.Contents.length) {
+            if (results.length > 0) resolve(results);
+            else reject(`There are no data fetching from S3 Bucket! ${Bucket}`);
+          }
+        });
       }
-
-      if (data)
-        resolve(new Buffer(data.Body, data.ContentType).toString("utf8"));
-      else
-        reject("There are problem with fetching data from S3 bucket!" + data);
     });
   });
 };
+
+function uploadObjectFromBucket({ Bucket, Key }) {
+  return new Promise((resolve, reject) => {
+    s3.getObject({ Bucket, Key }, function(err, data) {
+      if (err) {
+        reject(
+          "There are problem with fetching data from S3 bucket! " +
+            err.toString()
+        );
+      }
+      if (data)
+        resolve(new Buffer(data.Body, data.ContentType).toString("utf8"));
+      else
+        reject(`File with key ${Key} from Bucket ${Bucket} is not fetching!`);
+    });
+  });
+}
 
 exports.uploadTo = settings => {
   const { Bucket, Key, csv } = settings;
   delete settings.Bucket;
   delete settings.Key;
   delete settings.csv;
-  const s3 = new aws.S3({
-    apiVersion: "2006-03-01"
-  });
 
   return new Promise((resolve, reject) => {
     const fileBuffer = new Buffer(csv);
