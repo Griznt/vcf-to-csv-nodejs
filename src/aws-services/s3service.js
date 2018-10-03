@@ -10,11 +10,11 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
   return new Promise((resolve, reject) => {
     const params = { Bucket };
     if (maxKeys) params["maxKeys"] = maxKeys;
-    s3.listObjectsV2(params, function(err, data) {
+    s3.listObjectsV2(params, function (err, data) {
       if (err || !data) {
         reject(
           "There are problem with fetching Objects list from S3 bucket!" +
-            err.toString()
+          err.toString()
         );
       } else {
         data.Contents.forEach(async (object, i) => {
@@ -38,11 +38,11 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
 
 function uploadObjectFromBucket({ Bucket, Key }) {
   return new Promise((resolve, reject) => {
-    s3.getObject({ Bucket, Key }, function(err, data) {
+    s3.getObject({ Bucket, Key }, function (err, data) {
       if (err) {
         reject(
           "There are problem with fetching data from S3 bucket! " +
-            err.toString()
+          err.toString()
         );
       }
       if (data)
@@ -54,7 +54,9 @@ function uploadObjectFromBucket({ Bucket, Key }) {
 }
 
 exports.uploadTo = settings => {
-  const { Bucket, Key, csv } = settings;
+  const { BucketUpload, Bucket, Key, csv } = settings;
+  if (settings[BucketUpload])
+    delete settings.BucketUpload;
   delete settings.Bucket;
   delete settings.Key;
   delete settings.csv;
@@ -67,7 +69,7 @@ exports.uploadTo = settings => {
       ...settings,
       Body: fileBuffer,
       Key: fileName,
-      Bucket,
+      Bucket: BucketUpload || Bucket,
       ContentType: "text/csv"
     };
 
@@ -77,7 +79,7 @@ exports.uploadTo = settings => {
         return;
       }
       resolve(
-        "File successfully loaded to S3 Bucket! " + data ? data.Location : ""
+        `File successfully loaded to S3 Bucket: ${BucketUpload || Bucket}! ` + data ? data.Location : ""
       );
     });
   });
