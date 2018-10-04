@@ -85,7 +85,7 @@ function loadFiles(dir, params) {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
       }
-      fs.readdir(dir, function (error, fileNames) {
+      fs.readdir(dir, function(error, fileNames) {
         if (error) {
           console.error(error);
           reject(error);
@@ -293,7 +293,7 @@ function saveToCSV(arrayofObjects) {
 }
 
 function writeToFile({ outputFileLocation, file }) {
-  fs.writeFileSync(outputFileLocation, file, function (err) {
+  fs.writeFileSync(outputFileLocation, file, function(err) {
     if (err) {
       return console.error(err);
     }
@@ -335,16 +335,17 @@ function uploadToDropbox(file, params) {
 
   const uploadingPath = `/${
     DBX_UPLOAD_SUB_FOLDER ? `${DBX_UPLOAD_SUB_FOLDER}/` : ""
-    }${file.name}`;
+  }${file.name}`;
 
   const dbx = new Dropbox({ accessToken: DBX_ACCESS_TOKEN });
 
   dbx
     .filesUpload({
       path: uploadingPath,
-      contents: file.content
+      contents: file.content,
+      mode: "overwrite"
     })
-    .then(function (response) {
+    .then(function(response) {
       const message = `File "${uploadingPath}" is successfully uploaded to DropBox!`;
       logResponse({
         params,
@@ -352,9 +353,11 @@ function uploadToDropbox(file, params) {
         message
       });
     })
-    .catch(function (err) {
-      const message =
-        `File "${uploadingPath}" upload to DropBox error:` + err.toString();
+    .catch(function(err) {
+      const message = `File "${uploadingPath}" upload to DropBox error: ${JSON.stringify(
+        err.error
+      )}`;
+      console.log(err);
       logResponse({
         params,
         success: false,
@@ -375,7 +378,7 @@ function lambdaCallback({ success, message, callback }) {
   else callback(message);
 }
 
-exports.start = async function ({ isInLambda, callback, aws_params, onFinish }) {
+exports.start = async function({ isInLambda, callback, aws_params, onFinish }) {
   const result = await loadAllFilesInDir(inputDir, {
     isInLambda,
     callback,
