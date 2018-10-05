@@ -73,7 +73,7 @@ function loadFiles(dir, params) {
         .uploadFrom(aws_params)
         .then(results => {
           results.forEach(vcard => {
-            objects = objects.concat(objects, parseVCardToCsv(vcard));
+            objects = objects.concat(parseVCardToCsv(vcard));
           });
           resolve(objects);
         })
@@ -100,7 +100,7 @@ function loadFiles(dir, params) {
           fileNames.forEach(fileName => {
             if (fileName.includes(".vcf")) {
               const vcard = fs.readFileSync(path.join(dir, fileName), "utf8");
-              objects = objects.concat(objects, parseVCardToCsv(vcard));
+              objects = objects.concat(parseVCardToCsv(vcard));
             }
           });
           resolve(objects);
