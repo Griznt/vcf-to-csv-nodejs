@@ -40,7 +40,11 @@ module.exports = Object.freeze({
   DATE_FORMAT: "MM/DD/YYYY",
   ADDITIONAL_PARSING_RULES: { CONCAT: "CONCAT" },
   ADDITIONAL_PARSING_CONDITIONS: [
-    { CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }], replaceSource: true },
+    {
+      CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }],
+      replaceSource: true,
+      mergeWith: "\n"
+    },
     {
       CONCAT: [
         {
@@ -48,7 +52,8 @@ module.exports = Object.freeze({
         }
       ],
       replaceSource: false,
-      newField: true
+      newField: true,
+      mergeWith: " "
     }
   ]
 });

@@ -1,5 +1,9 @@
 [
-  { "CONCAT": [{ "ADR:3": ["ADR:2", "ADR:1"] }], "replaceSource": true },
+  {
+    "CONCAT": [{ "ADR:3": ["ADR:2", "ADR:1"] }],
+    "replaceSource": true,
+    "mergeWith": "\n"
+  },
   {
     "CONCAT": [
       {
@@ -7,6 +11,7 @@
       }
     ],
     "replaceSource": false,
-    "newField": true
+    "newField": true,
+    "mergeWith": " "
   }
 ]
