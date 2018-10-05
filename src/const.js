@@ -38,5 +38,8 @@ module.exports = Object.freeze({
   DATE_PARSE_REGEXP: /^(\d{1,4})-(\d{1,4})-(\d{1,4})$/,
   DATE_FORMAT: "MM/DD/YYYY",
   ADDITIONAL_PARSING_RULES: { CONCAT: "CONCAT" },
-  ADDITIONAL_PARSING_CONDITIONS: [{ CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }] }]
+  ADDITIONAL_PARSING_CONDITIONS: [
+    { CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }], replaceSource: true },
+    { CONCAT: [{ "N:1": ["N:2", "N:3"] }], replaceSource: false }
+  ]
 });

@@ -6,7 +6,7 @@ const Json2csvParser = require("json2csv").Parser;
 const moment = require("moment");
 
 require("isomorphic-fetch");
-
+//FIXME: исправить
 const {
   PREFIX,
   POSTFIX,
@@ -220,10 +220,20 @@ function parseVCardToCsv(vcard, params = {}) {
             rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
               const key = getObjectkey(concatRule);
               const value = concatRule[key];
-              value.filter(v => !!resultObject[v]).forEach(v => {
-                resultObject[key] += `\r\n${resultObject[v]}`;
-                delete resultObject[v];
-              });
+              value
+                .map(v => {
+                  console.log({ resultObject, v, r: resultObject[v] });
+                  return v;
+                })
+                .filter(v => !!resultObject[v])
+                .forEach(v => {
+                  resultObject[key] += `\r\n${resultObject[v]}`;
+                  console.log({ rule }, getObjectkey(rule, 1), rule);
+                  if (!!rule.replaceSource) {
+                    console.log("replace source is true for %s", rule);
+                    delete resultObject[v];
+                  }
+                });
             });
             break;
           default:
@@ -241,9 +251,9 @@ function parseVCardToCsv(vcard, params = {}) {
   return mergeResultObjects(result);
 }
 
-function getObjectkey(object) {
+function getObjectkey(object, keyIndex) {
   try {
-    return Object.keys(object)[0];
+    return Object.keys(object)[keyIndex || 0];
   } catch (error) {
     console.error("Error in get object key function", error);
     return object;
