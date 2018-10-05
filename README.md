@@ -86,7 +86,8 @@ FULLNAME: ["N:2", "N:3", "N:4", "N:5", "N:6", "N:7", "NOT_EXISTED"]
 }
 ],
 replaceSource: false,
-newField: true
+newField: true,
+mergeWith: '\n'
 }
 ```
 
@@ -97,6 +98,8 @@ there is:
 - `["N:1", "N:2"... "SOME_NOT_EXISTED_FIELD"]` - the array of SLAVE fields names in SOURCE vcf file, that will be concatinated with MAIN field. If some notExistedFieldName will be represented - it will be ignored.
 - `replaceSource` - If true, the SLAVE fields names will be removed, If false SLAVE fields will be shown as separately fields and as concatenated string in the MAIN field
 - `newField` - select true if this field does not existed in the list of source fields names in the vcf file. If false or not specified - this value is already existed in the fields list.
+- `mergeWith` - You can specify how you want to concatenate the strings from fields.
+
   If you have add the newField don't forget to add them in the headlines-mapping.json.
   For example:
 
