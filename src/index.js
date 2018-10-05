@@ -6,7 +6,7 @@ const Json2csvParser = require("json2csv").Parser;
 const moment = require("moment");
 
 require("isomorphic-fetch");
-
+//FIXME: исправить
 const {
   PREFIX,
   POSTFIX,
@@ -15,7 +15,8 @@ const {
   DATE_PARSE_REGEXP,
   DATE_FORMAT,
   ADDITIONAL_PARSING_RULES,
-  ADDITIONAL_PARSING_CONDITIONS
+  ADDITIONAL_PARSING_CONDITIONS,
+  ADDITIONAL_PARSING_SETTINGS_FILENAME_2
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -36,6 +37,18 @@ const headlinesMappingFilePath = path.join(
 );
 
 const HEADLINES_MAPPING = loadHeadlinesMappingFile();
+
+const ADDITIONAL_PARSING_SETTINGS_FILENAME =
+  process.env.ADDITIONAL_PARSING_SETTINGS_FILENAME ||
+  ADDITIONAL_PARSING_SETTINGS_FILENAME_2;
+
+const additionalParsingSettingsFilePath = path.join(
+  __dirname,
+  "/",
+  ADDITIONAL_PARSING_SETTINGS_FILENAME
+);
+
+const additionalParsingSettings = loadAdditionalParsingSettingsFile();
 
 const allHeaders = HEADLINES_MAPPING.map(item => Object.keys(item)[0]);
 
@@ -59,6 +72,27 @@ function loadHeadlinesMappingFile() {
     } catch (error) {
       console.error(error);
       return VCARD_HEADLINES_MAPPING;
+    }
+  }
+}
+
+function loadAdditionalParsingSettingsFile() {
+  if (!fs.existsSync(additionalParsingSettingsFilePath)) {
+    console.error(
+      `There are no additional parsing settings file "${additionalParsingSettingsFilePath}"! Will used method from const.js.`
+    );
+
+    return ADDITIONAL_PARSING_CONDITIONS;
+  } else {
+    try {
+      const file = fs.readFileSync(
+        path.join(additionalParsingSettingsFilePath),
+        "utf8"
+      );
+      return JSON.parse(file);
+    } catch (error) {
+      console.error(error);
+      return ADDITIONAL_PARSING_CONDITIONS;
     }
   }
 }
@@ -214,15 +248,21 @@ function parseVCardToCsv(vcard, params = {}) {
     });
 
     try {
-      ADDITIONAL_PARSING_CONDITIONS.forEach(rule => {
+      additionalParsingSettings.forEach(rule => {
         switch (getObjectkey(rule)) {
           case ADDITIONAL_PARSING_RULES.CONCAT:
             rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
-              const key = getObjectkey(concatRule);
-              const value = concatRule[key];
+              const key = getObjectkey(concatRule),
+                replaceSource = !!rule.replaceSource,
+                isNewField = !!rule.newField,
+                mergeWith = rule.mergeWith || "",
+                value = concatRule[key];
+              if (isNewField) resultObject[key] = "";
               value.filter(v => !!resultObject[v]).forEach(v => {
-                resultObject[key] += `\r\n${resultObject[v]}`;
-                delete resultObject[v];
+                resultObject[key] += `${mergeWith}${resultObject[v]}`;
+                if (replaceSource) {
+                  delete resultObject[v];
+                }
               });
             });
             break;
@@ -230,6 +270,7 @@ function parseVCardToCsv(vcard, params = {}) {
             break;
         }
       });
+      console.log(resultObject);
     } catch (error) {
       const message =
         "There are error in additional parsing function" + error.toString();
@@ -241,9 +282,9 @@ function parseVCardToCsv(vcard, params = {}) {
   return mergeResultObjects(result);
 }
 
-function getObjectkey(object) {
+function getObjectkey(object, keyIndex) {
   try {
-    return Object.keys(object)[0];
+    return Object.keys(object)[keyIndex || 0];
   } catch (error) {
     console.error("Error in get object key function", error);
     return object;

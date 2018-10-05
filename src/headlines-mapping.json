@@ -5,6 +5,7 @@
   { "N:1": "Nachname" },
   { "TITLE:1": "Titel" },
   { "ORG:1": "Accountname" },
+  { "ADR:2": "ADR:2ADR:2ADR:2ADR:2" },
   { "ADR:3": "Strasse (Postanschrift)" },
   { "ADR:4": "Stadt (Postanschrift)" },
   { "ADR:5": "Bundesland (Postanschrift)" },
