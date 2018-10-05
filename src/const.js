@@ -35,11 +35,20 @@ module.exports = Object.freeze({
   PREFIX: "BEGIN:VCARD",
   POSTFIX: "END:VCARD",
   HEADLINES_MAPPING_FILENAME_2: "headlines-mapping.json",
+  ADDITIONAL_PARSING_SETTINGS_FILENAME_2: "additional-parsing-settings.json",
   DATE_PARSE_REGEXP: /^(\d{1,4})-(\d{1,4})-(\d{1,4})$/,
   DATE_FORMAT: "MM/DD/YYYY",
   ADDITIONAL_PARSING_RULES: { CONCAT: "CONCAT" },
   ADDITIONAL_PARSING_CONDITIONS: [
     { CONCAT: [{ "ADR:3": ["ADR:2", "ADR:1"] }], replaceSource: true },
-    { CONCAT: [{ "N:1": ["N:2", "N:3"] }], replaceSource: false }
+    {
+      CONCAT: [
+        {
+          FULLNAME: ["N:2", "N:3", "N:4", "N:5", "N:6", "N:7", "NOT_EXISTED"]
+        }
+      ],
+      replaceSource: false,
+      newField: true
+    }
   ]
 });

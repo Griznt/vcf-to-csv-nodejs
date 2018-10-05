@@ -30,6 +30,5 @@
   { "PHOTO;VALUE=uri": "Photo" },
   { "URL:1": "Website" },
   { "NICKNAME": "Nickname" },
-  { "IMPP;X-SERVICE-TYPE=Skype": "Skype ID" },
-  { "": "11111" }
+  { "IMPP;X-SERVICE-TYPE=Skype": "Skype ID" }
 ]

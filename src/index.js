@@ -15,7 +15,8 @@ const {
   DATE_PARSE_REGEXP,
   DATE_FORMAT,
   ADDITIONAL_PARSING_RULES,
-  ADDITIONAL_PARSING_CONDITIONS
+  ADDITIONAL_PARSING_CONDITIONS,
+  ADDITIONAL_PARSING_SETTINGS_FILENAME_2
 } = require("./const");
 
 const inputDir = path.join(__dirname, "..", process.env.INPUT_DIR || "input");
@@ -28,6 +29,10 @@ const outputDir = path.join(
 
 const HEADLINES_MAPPING_FILENAME =
   process.env.HEADLINES_MAPPING_FILENAME || HEADLINES_MAPPING_FILENAME_2;
+
+const ADDITIONAL_PARSING_SETTINGS_FILENAME =
+  process.env.ADDITIONAL_PARSING_SETTINGS_FILENAME ||
+  ADDITIONAL_PARSING_SETTINGS_FILENAME_2;
 
 const headlinesMappingFilePath = path.join(
   __dirname,
@@ -218,28 +223,24 @@ function parseVCardToCsv(vcard, params = {}) {
         switch (getObjectkey(rule)) {
           case ADDITIONAL_PARSING_RULES.CONCAT:
             rule[ADDITIONAL_PARSING_RULES.CONCAT].forEach(concatRule => {
-              const key = getObjectkey(concatRule);
-              const value = concatRule[key];
-              value
-                .map(v => {
-                  console.log({ resultObject, v, r: resultObject[v] });
-                  return v;
-                })
-                .filter(v => !!resultObject[v])
-                .forEach(v => {
-                  resultObject[key] += `\r\n${resultObject[v]}`;
-                  console.log({ rule }, getObjectkey(rule, 1), rule);
-                  if (!!rule.replaceSource) {
-                    console.log("replace source is true for %s", rule);
-                    delete resultObject[v];
-                  }
-                });
+              const key = getObjectkey(concatRule),
+                replaceSource = !!rule.replaceSource,
+                isNewField = !!rule.newField,
+                value = concatRule[key];
+              if (isNewField) resultObject[key] = "";
+              value.filter(v => !!resultObject[v]).forEach(v => {
+                resultObject[key] += `\r\n${resultObject[v]}`;
+                if (replaceSource) {
+                  delete resultObject[v];
+                }
+              });
             });
             break;
           default:
             break;
         }
       });
+      console.log(resultObject);
     } catch (error) {
       const message =
         "There are error in additional parsing function" + error.toString();

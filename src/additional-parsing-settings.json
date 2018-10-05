@@ -1,0 +1,12 @@
+[
+  { "CONCAT": [{ "ADR:3": ["ADR:2", "ADR:1"] }], "replaceSource": true },
+  {
+    "CONCAT": [
+      {
+        "FULLNAME": ["N:2", "N:3", "N:4", "N:5", "N:6", "N:7", "NOT_EXISTED"]
+      }
+    ],
+    "replaceSource": false,
+    "newField": true
+  }
+]
