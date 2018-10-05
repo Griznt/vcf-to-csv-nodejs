@@ -258,8 +258,10 @@ function parseVCardToCsv(vcard, params = {}) {
                 mergeWith = rule.mergeWith || "",
                 value = concatRule[key];
               if (isNewField) resultObject[key] = "";
-              value.filter(v => !!resultObject[v]).forEach(v => {
-                resultObject[key] += `${mergeWith}${resultObject[v]}`;
+              value.filter(v => !!resultObject[v]).forEach((v, i) => {
+                resultObject[key] += `${
+                  isNewField && i === 0 ? "" : mergeWith
+                }${resultObject[v]}`;
                 if (replaceSource) {
                   delete resultObject[v];
                 }
@@ -270,6 +272,7 @@ function parseVCardToCsv(vcard, params = {}) {
             break;
         }
       });
+      console.log(resultObject);
     } catch (error) {
       const message =
         "There are error in additional parsing function" + error.toString();
