@@ -10,20 +10,22 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
   return new Promise((resolve, reject) => {
     const params = { Bucket };
     if (maxKeys) params["maxKeys"] = maxKeys;
-    s3.listObjectsV2(params, function (err, data) {
+    s3.listObjectsV2(params, function(err, data) {
       if (err || !data) {
         reject(
           "There are problem with fetching Objects list from S3 bucket!" +
-          err.toString()
+            err.toString()
         );
       } else {
         data.Contents.forEach(async (object, i) => {
           const Key = object.Key;
           if (!Key.includes(".vcf")) return;
           await uploadObjectFromBucket({ Bucket, Key })
-            .then(result => (results = results.concat(results, result)))
+            .then(result => {
+              results = results.concat(result);
+            })
             .catch(console.error);
-          if (i + 1 === data.Contents.length) {
+          if (i === data.Contents.length - 1) {
             if (results.length > 0) resolve(results);
             else
               reject(
@@ -38,11 +40,11 @@ exports.uploadFrom = ({ Bucket, maxKeys }) => {
 
 function uploadObjectFromBucket({ Bucket, Key }) {
   return new Promise((resolve, reject) => {
-    s3.getObject({ Bucket, Key }, function (err, data) {
+    s3.getObject({ Bucket, Key }, function(err, data) {
       if (err) {
         reject(
           "There are problem with fetching data from S3 bucket! " +
-          err.toString()
+            err.toString()
         );
       }
       if (data)
@@ -55,8 +57,7 @@ function uploadObjectFromBucket({ Bucket, Key }) {
 
 exports.uploadTo = settings => {
   const { BucketUpload, Bucket, Key, csv } = settings;
-  if (settings[BucketUpload])
-    delete settings.BucketUpload;
+  if (settings[BucketUpload]) delete settings.BucketUpload;
   delete settings.Bucket;
   delete settings.Key;
   delete settings.csv;
@@ -79,7 +80,10 @@ exports.uploadTo = settings => {
         return;
       }
       resolve(
-        `File successfully loaded to S3 Bucket: ${BucketUpload || Bucket}! ` + data ? data.Location : ""
+        `File successfully loaded to S3 Bucket: ${BucketUpload || Bucket}! ` +
+        data
+          ? data.Location
+          : ""
       );
     });
   });
