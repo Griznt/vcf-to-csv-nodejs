@@ -272,7 +272,6 @@ function parseVCardToCsv(vcard, params = {}) {
             break;
         }
       });
-      console.log(resultObject);
     } catch (error) {
       const message =
         "There are error in additional parsing function" + error.toString();
