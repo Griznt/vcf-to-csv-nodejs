@@ -34,6 +34,9 @@ You may specify following settings:
 - `HEADLINES_MAPPING_FILENAME=` You can specify mapping file name
 - `ADDITIONAL_PARSING_SETTINGS_FILENAME=` You can specify additional-parsing-settings file name
 - `DATE_FORMAT=` You can specify the shown date format or `MM/DD/YYYY` will be used by default
+- For uploading to or downloading from Amason AWS S3 Bucket you need to specify:
+- `AWS_ACCESS_KEY_ID=` ACCESS key id
+- `AWS_SECRET_ACCESS_KEY=` SECRET ACCESS key
 
 only for local running in terminal:
 
